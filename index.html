@@ -31,9 +31,9 @@
         /* --- FILE MANAGER PAGE --- */
         #file-manager-view { display: flex; width: 100%; height: 100%; }
         
-        .fm-sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.1); z-index: 10; }
+        .fm-sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; z-index: 10; }
         .fm-logo { font-size: 20px; font-weight: 600; padding: 0 20px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .fm-nav-item { padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
+        .fm-nav-item { padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
         .fm-nav-item:hover { background: rgba(255,255,255,0.05); }
         .fm-nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--primary); }
         .fm-status { margin-top: auto; padding: 20px; font-size: 12px; color: #aaa; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -46,32 +46,29 @@
         .crumb-link:hover { color: var(--primary); }
         .crumb-sep { color: #ccc; font-size: 16px; font-weight: 400; }
         .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .fm-search-bar { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; width: 180px; outline: none; transition: border 0.2s;}
+        .fm-search-bar:focus { border-color: var(--primary); }
 
         .fm-content-area { flex: 1; overflow-y: auto; padding: 30px; background: #fafafa; }
-        
         .upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .upload-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
 
-        .resume-banner { background: linear-gradient(135deg, #0078d4, #005a9e); color: white; padding: 15px 24px; border-radius: 8px; margin-bottom: 30px; cursor: pointer; display: none; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,120,212,0.3); transition: transform 0.2s; }
-        .resume-banner:hover { transform: translateY(-2px); }
-
-        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .book-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
-        .book-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.08); border-color: var(--primary); transform: translateY(-4px); }
-        .folder-card { background: #fdfaf2; border-color: #e5d8b3; }
-        .folder-card:hover { border-color: #dcb343; }
+        .resume-banner { background: linear-gradient(135deg, #0078d4, #005a9e); color: white; padding: 15px 24px; border-radius: 8px; margin-bottom: 30px; cursor: pointer; display: none; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,120,212,0.3); }
         
-        .card-body { padding: 25px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .book-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s; border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+        .folder-card { background: #fdfaf2; border-color: #e5d8b3; }
+        .card-body { padding: 25px 20px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .book-icon { font-size: 48px; margin-bottom: 12px; }
         .book-title { font-size: 14px; font-weight: 600; word-break: break-word; line-height: 1.3; }
         .book-meta { font-size: 11px; color: #888; margin-top: 8px; }
 
         .card-footer { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid #eee; background: #fafafa; }
         .folder-card .card-footer { background: #f9f5ea; border-top-color: #e5d8b3; }
-        .card-footer button { flex: 1; padding: 10px 0; background: transparent; border: none; cursor: pointer; color: #555; font-size: 14px; transition: background 0.2s; border-right: 1px solid #eee; }
+        .card-footer button { flex: 1; padding: 12px 0; background: transparent; border: none; cursor: pointer; color: #555; font-size: 16px; border-right: 1px solid #eee; }
         .card-footer button:last-child { border-right: none; }
         .card-footer button:hover { background: rgba(0,0,0,0.05); }
-        .card-footer button.del:hover { color: #d13438; background: rgba(209,52,56,0.1); }
 
         /* --- READER PAGE --- */
         #reader-view { display: none; width: 100%; height: 100%; flex-direction: column; background: #e5e5e5; }
@@ -81,50 +78,40 @@
         .active-tool { background-color: rgba(255, 255, 255, 0.2); border-bottom: 2px solid var(--primary); }
         #book-title-header { margin: 0; font-size: 14px; font-weight: 400; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Search Bar */
         .search-container { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 8px; }
-        .search-container input { background: transparent; border: none; color: white; padding: 6px; font-size: 13px; width: 120px; outline: none; }
-        .search-container input::placeholder { color: #ccc; }
-        .search-container button { background: transparent; border: none; color: white; cursor: pointer; }
-
-        /* Color Picker */
+        .search-container input { background: transparent; border: none; color: white; padding: 6px; font-size: 13px; width: 100px; outline: none; }
         .color-picker { width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px; cursor: pointer; background: transparent; }
 
-        .viewer-viewport { flex: 1; overflow: hidden; position: relative; touch-action: none; } /* Hardware zoom wrapper */
-        .zoom-container { padding: 30px 0 80px 0; width: 100%; height: 100%; overflow: auto; transform-origin: top center; transition: transform 0.1s ease-out; }
-        
+        /* Native Zoom Architecture */
+        .viewer-viewport { flex: 1; overflow-y: auto; overflow-x: auto; touch-action: pan-x pan-y; padding: 30px 0 80px 0; }
         .pdf-pages-container { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
-        .pdf-page-wrapper { position: relative; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); background: #ffffff; border-radius: 4px; }
-        .pdf-page-canvas { display: block; border-radius: 4px; }
-        .annotation-canvas { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: auto; }
+        
+        .pdf-page-wrapper { position: relative; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); background: #ffffff; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 12px; color: #888; }
+        .pdf-page-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 4px; }
+        .annotation-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: auto; }
 
         .reader-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 1000; }
-        .edge-page-pill { background-color: rgba(43, 43, 43, 0.9); color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .bookmark-btn { background-color: rgba(43, 43, 43, 0.9); border: none; color: #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; }
-        .bookmark-btn:hover { background-color: var(--primary); }
+        .edge-page-pill { background-color: rgba(43, 43, 43, 0.9); color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .bookmark-btn { background-color: rgba(43, 43, 43, 0.9); border: none; color: #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; }
         .bookmark-btn.bookmarked { background-color: #ffb900; color: #000; }
 
-        /* --- MODALS & LOADERS --- */
+        /* --- MODALS --- */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; backdrop-filter: blur(5px); }
         .modal-card { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); width: 340px; text-align: center; border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto; }
-        .modal-card h2 { margin-top: 0; font-size: 20px; color: var(--text-dark); margin-bottom: 20px; }
-        
         .progress-container { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 20px; overflow: hidden; display: none; }
         .progress-bar { width: 0%; height: 100%; background: var(--primary); transition: width 0.2s ease-in-out; }
-
-        .folder-list-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 14px; border-radius: 4px; margin-bottom: 4px; }
-        .folder-list-item:hover { background: #f0f0f0; }
-
+        .folder-list-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 14px; }
+        
         #loader, #move-modal { display: none; }
 
         @media (max-width: 768px) {
             #file-manager-view { flex-direction: column; }
             .fm-sidebar { width: 100%; height: auto; padding: 10px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid #444; }
-            .fm-logo { border: none; padding: 0; margin: 0; }
             .fm-nav-item, .fm-status { display: none; }
             .fm-main { border-radius: 0; margin-top: 0; }
             .reader-controls span { display: none; }
             #book-title-header { display: none; }
+            .fm-search-bar { width: 100%; }
         }
     </style>
 </head>
@@ -149,9 +136,7 @@
 
     <div id="file-manager-view">
         <div class="fm-sidebar">
-            <div class="fm-logo">
-                <span style="font-size: 24px;">📚</span> Shivam Reader
-            </div>
+            <div class="fm-logo"><span style="font-size: 24px;">📚</span> Shivam Reader</div>
             <div class="fm-nav-item active" onclick="openFolder('root')"><span>🏠</span> My Drive</div>
             <div class="fm-nav-item" onclick="syncFromCloud()"><span>🔄</span> Force Sync API</div>
             <div class="fm-status"><div id="cloud-status">📡 Checking connection...</div></div>
@@ -161,6 +146,7 @@
             <div class="fm-header">
                 <div class="breadcrumbs" id="breadcrumbs"></div>
                 <div class="header-actions">
+                    <input type="text" id="fm-search" class="fm-search-bar" placeholder="🔍 Search files..." onkeyup="filterGrid()">
                     <button class="action-btn" onclick="createNewFolder()">📁 New Folder</button>
                     <div class="upload-wrapper">
                         <button class="action-btn primary-btn">➕ Upload PDF</button>
@@ -187,7 +173,7 @@
             
             <div class="reader-controls">
                 <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Find in PDF...">
+                    <input type="text" id="pdf-search-input" placeholder="Find Text...">
                     <button onclick="searchPDF()">🔍</button>
                 </div>
                 <div style="width: 1px; height: 20px; background: #555; margin: 0 5px;"></div>
@@ -205,9 +191,7 @@
         </div>
 
         <div id="viewer-viewport" class="viewer-viewport">
-            <div class="zoom-container" id="zoom-container">
-                <div id="pdf-pages-container" class="pdf-pages-container"></div>
-            </div>
+            <div id="pdf-pages-container" class="pdf-pages-container"></div>
         </div>
 
         <div class="reader-footer">
@@ -215,6 +199,7 @@
             <div class="edge-page-pill">
                 Page <span id="page-number">1</span> / <span id="page-count">?</span>
             </div>
+            <div id="sync-status" style="margin-left:10px; font-size: 12px; color:#555; text-shadow: 1px 1px 2px white;">Ready</div>
         </div>
     </div>
 
@@ -231,8 +216,6 @@
             try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
         }
 
-        // --- TRUE CLOUD STATE (PINNED MESSAGE DB) ---
-        // Added bookmarks array
         let cloudOS = { folders: [], files: [], last: null, bookmarks: [] };
         let currentParentId = "root"; 
         let movingBookId = null;
@@ -255,8 +238,7 @@
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/unpinAllChatMessages?chat_id=${TELEGRAM_CHAT_ID}`);
                 const dbString = "[OS_DB]" + JSON.stringify(cloudOS);
                 const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: dbString, disable_notification: true })
                 });
                 const data = await res.json();
@@ -264,9 +246,7 @@
                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/pinChatMessage?chat_id=${TELEGRAM_CHAT_ID}&message_id=${data.result.message_id}&disable_notification=true`);
                 }
                 document.getElementById('cloud-status').innerText = "✅ Cloud Sync Active";
-            } catch (err) {
-                document.getElementById('cloud-status').innerText = "⚠️ DB Sync Error";
-            }
+            } catch (err) { document.getElementById('cloud-status').innerText = "⚠️ DB Sync Error"; }
         }
 
         async function syncFromCloud() {
@@ -274,21 +254,16 @@
             try {
                 const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat?chat_id=${TELEGRAM_CHAT_ID}`);
                 const data = await res.json();
-                
                 if (data.ok && data.result.pinned_message && data.result.pinned_message.text.startsWith('[OS_DB]')) {
                     cloudOS = JSON.parse(data.result.pinned_message.text.replace('[OS_DB]', ''));
-                    if(!cloudOS.bookmarks) cloudOS.bookmarks = []; // Fallback for old DBs
+                    if(!cloudOS.bookmarks) cloudOS.bookmarks = [];
                     document.getElementById('cloud-status').innerText = "✅ Cloud Sync Active";
                 }
-            } catch (err) {
-                console.warn("Offline Mode.");
-                document.getElementById('cloud-status').innerText = "⚠️ Offline Mode";
-            }
-            renderGrid();
-            hide('loader');
+            } catch (err) { document.getElementById('cloud-status').innerText = "⚠️ Offline Mode"; }
+            renderGrid(); hide('loader');
         }
 
-        // --- FILE MANAGER UI ---
+        // --- FILE MANAGER UI & SEARCH ---
         function getBreadcrumbs(folderId) {
             if (folderId === "root") return [{id: "root", name: "My Drive"}];
             const folder = cloudOS.folders.find(f => f.id === folderId);
@@ -296,31 +271,37 @@
             return [...getBreadcrumbs(folder.parentId), {id: folder.id, name: folder.name}];
         }
 
+        function filterGrid() {
+            const query = document.getElementById('fm-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.book-card');
+            cards.forEach(card => {
+                const title = card.querySelector('.book-title').innerText.toLowerCase();
+                if(title.includes(query)) card.style.display = 'flex';
+                else card.style.display = 'none';
+            });
+        }
+
         function renderGrid() {
             const grid = document.getElementById('book-grid');
             grid.innerHTML = '';
+            document.getElementById('fm-search').value = ""; // Reset search
 
             if (cloudOS.last && cloudOS.last.id && currentParentId === "root") {
                 document.getElementById('resume-title').innerText = `${cloudOS.last.name} (Pg ${cloudOS.last.page})`;
                 document.getElementById('resume-banner').style.display = 'flex';
-            } else {
-                document.getElementById('resume-banner').style.display = 'none';
-            }
+            } else { document.getElementById('resume-banner').style.display = 'none'; }
 
             const crumbs = getBreadcrumbs(currentParentId);
             const crumbContainer = document.getElementById('breadcrumbs');
             crumbContainer.innerHTML = '';
             crumbs.forEach((crumb, index) => {
                 const link = document.createElement('span');
-                link.className = 'crumb-link';
-                link.innerText = crumb.name;
+                link.className = 'crumb-link'; link.innerText = crumb.name;
                 link.onclick = () => openFolder(crumb.id);
                 crumbContainer.appendChild(link);
-                
                 if (index < crumbs.length - 1) {
                     const sep = document.createElement('span');
-                    sep.className = 'crumb-sep';
-                    sep.innerText = ' / ';
+                    sep.className = 'crumb-sep'; sep.innerText = ' / ';
                     crumbContainer.appendChild(sep);
                 }
             });
@@ -329,8 +310,7 @@
             const activeFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
 
             if (activeFolders.length === 0 && activeFiles.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1/-1; color:#888; text-align: center; margin-top: 50px;">This folder is empty.</p>`;
-                return;
+                grid.innerHTML = `<p style="grid-column: 1/-1; color:#888; text-align: center; margin-top: 50px;">This folder is empty.</p>`; return;
             }
 
             activeFolders.forEach(folder => {
@@ -342,17 +322,15 @@
                         <div class="book-title">${folder.name}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button title="Rename Folder" onclick="renameFolder('${folder.id}')">✏️</button>
-                        <button title="Delete Folder" class="del" onclick="deleteFolder('${folder.id}')">🗑️</button>
-                    </div>
-                `;
+                        <button title="Rename" onclick="renameFolder('${folder.id}')">✏️</button>
+                        <button title="Delete" class="del" onclick="deleteFolder('${folder.id}')">🗑️</button>
+                    </div>`;
                 grid.appendChild(card);
             });
 
             [...activeFiles].reverse().forEach(file => {
-                // Determine if file has bookmarks to show an icon
                 const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
-                const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; color:#ffb900; font-size:20px;">🔖</div>` : '';
+                const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:20px; z-index:2;">🔖</div>` : '';
 
                 const card = document.createElement('div');
                 card.className = 'book-card';
@@ -364,62 +342,23 @@
                         <div class="book-meta">${file.size}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button title="Rename File" onclick="renameFile('${file.id}')">✏️</button>
-                        <button title="Move File" onclick="openMoveModal('${file.id}')">⮀</button>
-                        <button title="Delete File" class="del" onclick="deleteFile('${file.id}')">🗑️</button>
-                    </div>
-                `;
+                        <button title="Rename" onclick="renameFile('${file.id}')">✏️</button>
+                        <button title="Move" onclick="openMoveModal('${file.id}')">⮀</button>
+                        <button title="Delete" class="del" onclick="deleteFile('${file.id}')">🗑️</button>
+                    </div>`;
                 grid.appendChild(card);
             });
         }
 
-        function openFolder(folderId) { currentFolderView = folderId; currentParentId = folderId; renderGrid(); }
+        function openFolder(folderId) { currentParentId = folderId; renderGrid(); }
 
-        // --- ADVANCED FILE MANAGER OPERATIONS ---
-        function renameFile(id) {
-            const file = cloudOS.files.find(f => f.id === id);
-            if (!file) return;
-            const newName = prompt("Enter new file name:", file.name);
-            if (newName && newName.trim() !== "") { file.name = newName.trim(); syncToCloud(); renderGrid(); }
-        }
-
-        function renameFolder(id) {
-            const folder = cloudOS.folders.find(f => f.id === id);
-            if (!folder) return;
-            const newName = prompt("Enter new folder name:", folder.name);
-            if (newName && newName.trim() !== "") { folder.name = newName.trim(); syncToCloud(); renderGrid(); }
-        }
-
-        function deleteFile(fileId) {
-            if(!confirm("Permanently delete this file?")) return;
-            cloudOS.files = cloudOS.files.filter(f => f.id !== fileId);
-            if (cloudOS.last && cloudOS.last.id === fileId) cloudOS.last = null;
-            cloudOS.bookmarks = cloudOS.bookmarks.filter(b => b.fileId !== fileId); // clean up bookmarks
-            syncToCloud(); renderGrid();
-        }
-
-        function deleteFolder(folderId) {
-            if(!confirm("Permanently delete this folder and ALL its contents?")) return;
-            let idsToDelete = [folderId];
-            let foundNew = true;
-            while(foundNew) {
-                foundNew = false;
-                cloudOS.folders.forEach(f => {
-                    if (idsToDelete.includes(f.parentId) && !idsToDelete.includes(f.id)) { idsToDelete.push(f.id); foundNew = true; }
-                });
-            }
-            cloudOS.folders = cloudOS.folders.filter(f => !idsToDelete.includes(f.id));
-            cloudOS.files = cloudOS.files.filter(f => !idsToDelete.includes(f.parentId));
-            syncToCloud(); renderGrid();
-        }
-
-        function createNewFolder() {
-            const name = prompt("Enter new folder name:");
-            if (!name) return;
-            cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name, parentId: currentParentId });
-            syncToCloud(); renderGrid();
-        }
-
+        // --- FILE ACTIONS ---
+        function renameFile(id) { const file = cloudOS.files.find(f => f.id === id); if (!file) return; const newName = prompt("Enter new file name:", file.name); if (newName && newName.trim() !== "") { file.name = newName.trim(); syncToCloud(); renderGrid(); } }
+        function renameFolder(id) { const folder = cloudOS.folders.find(f => f.id === id); if (!folder) return; const newName = prompt("Enter new folder name:", folder.name); if (newName && newName.trim() !== "") { folder.name = newName.trim(); syncToCloud(); renderGrid(); } }
+        function deleteFile(fileId) { if(!confirm("Permanently delete this file?")) return; cloudOS.files = cloudOS.files.filter(f => f.id !== fileId); if (cloudOS.last && cloudOS.last.id === fileId) cloudOS.last = null; cloudOS.bookmarks = cloudOS.bookmarks.filter(b => b.fileId !== fileId); syncToCloud(); renderGrid(); }
+        function deleteFolder(folderId) { if(!confirm("Delete this folder and ALL its contents?")) return; let idsToDelete = [folderId]; let foundNew = true; while(foundNew) { foundNew = false; cloudOS.folders.forEach(f => { if (idsToDelete.includes(f.parentId) && !idsToDelete.includes(f.id)) { idsToDelete.push(f.id); foundNew = true; } }); } cloudOS.folders = cloudOS.folders.filter(f => !idsToDelete.includes(f.id)); cloudOS.files = cloudOS.files.filter(f => !idsToDelete.includes(f.parentId)); syncToCloud(); renderGrid(); }
+        function createNewFolder() { const name = prompt("Enter new folder name:"); if (!name) return; cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name, parentId: currentParentId }); syncToCloud(); renderGrid(); }
+        
         function openMoveModal(bookId) {
             movingBookId = bookId;
             const list = document.getElementById('folder-list');
@@ -427,12 +366,7 @@
             cloudOS.folders.forEach(f => { list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${f.id}')">📁 ${f.name}</div>`; });
             show('move-modal');
         }
-
-        function moveTo(targetFolderId) {
-            const file = cloudOS.files.find(f => f.id === movingBookId);
-            if (file) file.parentId = targetFolderId;
-            syncToCloud(); hide('move-modal'); renderGrid();
-        }
+        function moveTo(targetFolderId) { const file = cloudOS.files.find(f => f.id === movingBookId); if (file) file.parentId = targetFolderId; syncToCloud(); hide('move-modal'); renderGrid(); }
 
         // --- UPLOADER ---
         document.getElementById('pdf-upload').addEventListener('change', async (e) => {
@@ -443,86 +377,60 @@
             try {
                 if (file.size <= CHUNK_LIMIT) {
                     show('loader'); document.getElementById('loader-text').innerText = `Uploading ${file.name}...`;
-                    const formData = new FormData();
-                    formData.append('chat_id', TELEGRAM_CHAT_ID);
-                    formData.append('document', file);
-                    
+                    const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID); formData.append('document', file);
                     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
                     const data = await res.json();
-                    if (data.ok && data.result && data.result.document) {
-                        cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId });
-                        await syncToCloud();
-                    }
+                    if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId }); await syncToCloud(); }
                 } else {
                     show('loader'); document.getElementById('loader-text').innerText = `Slicing Huge File...`; setProgress(-1);
                     await new Promise(r => setTimeout(r, 100));
-                    
-                    const numChunks = Math.ceil(file.size / CHUNK_LIMIT);
-                    const arrayBuffer = await file.arrayBuffer();
-                    const rawPdf = await PDFLib.PDFDocument.load(arrayBuffer);
-                    const totalPages = rawPdf.getPageCount();
-                    const pagesPerChunk = Math.ceil(totalPages / numChunks);
-
-                    const autoFolderId = 'folder_' + Date.now();
-                    cloudOS.folders.push({ id: autoFolderId, name: file.name.replace('.pdf', '') + " (Parts)", parentId: currentParentId });
+                    const numChunks = Math.ceil(file.size / CHUNK_LIMIT); const arrayBuffer = await file.arrayBuffer();
+                    const rawPdf = await PDFLib.PDFDocument.load(arrayBuffer); const totalPages = rawPdf.getPageCount(); const pagesPerChunk = Math.ceil(totalPages / numChunks);
+                    const autoFolderId = 'folder_' + Date.now(); cloudOS.folders.push({ id: autoFolderId, name: file.name.replace('.pdf', '') + " (Parts)", parentId: currentParentId });
                     
                     for (let i = 0; i < numChunks; i++) {
                         document.getElementById('loader-text').innerText = `Uploading Volume ${i+1}/${numChunks}...`;
                         const newDoc = await PDFLib.PDFDocument.create();
-                        const start = i * pagesPerChunk;
-                        const end = Math.min(start + pagesPerChunk, totalPages);
+                        const start = i * pagesPerChunk; const end = Math.min(start + pagesPerChunk, totalPages);
                         const indices = []; for(let j = start; j < end; j++) indices.push(j);
-                        const copiedPages = await newDoc.copyPages(rawPdf, indices);
-                        copiedPages.forEach(p => newDoc.addPage(p));
-                        const pdfBytes = await newDoc.save();
-                        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                        
-                        const formData = new FormData();
-                        formData.append('chat_id', TELEGRAM_CHAT_ID);
-                        const volName = `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`;
-                        formData.append('document', blob, volName);
-                        
+                        const copiedPages = await newDoc.copyPages(rawPdf, indices); copiedPages.forEach(p => newDoc.addPage(p));
+                        const pdfBytes = await newDoc.save(); const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID);
+                        const volName = `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`; formData.append('document', blob, volName);
                         const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
                         const data = await res.json();
-                        if (data.ok && data.result && data.result.document) {
-                            cloudOS.files.push({ id: data.result.document.file_id, name: volName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolderId });
-                        }
+                        if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: volName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolderId }); }
                     }
                     await syncToCloud();
                 }
             } catch (err) { alert("Upload Failed: " + err.message); }
-            
             hide('loader'); renderGrid(); e.target.value = ''; 
         });
 
-        // --- READER SYSTEM ---
+        // --- NEW READER SYSTEM (LAZY LOAD + NATIVE ZOOM) ---
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let pdfDoc = null, pageCount = 0, currentTool = 'pan', isDrawing = false, drawingsMap = {};
-        let activeFileId = null;
-        let currentPageNum = 1;
+        let activeFileId = null, currentPageNum = 1;
         
-        // Hardware Zoom State
-        const zoomContainer = document.getElementById('zoom-container');
+        // Native Zoom
         const viewport = document.getElementById('viewer-viewport');
         const pagesContainer = document.getElementById('pdf-pages-container');
         let currentZoom = 1.0;
+        let baseContainerWidth = 800; // Calculated on open
+        let basePageRatio = 1.414; // Default A4, updated when pg 1 loads
+        let renderedPages = new Set(); // Tracks which pages have canvases
 
-        // Custom Colors
         let activeColor = '#d13438';
-        function updateColor() { activeColor = document.getElementById('color-picker').value; }
+        function updateColor() { activeColor = document.getElementById('color-picker').value; setTool('pen'); }
 
-        function resumeLastBook() {
-            if (cloudOS.last && cloudOS.last.id) openReader(cloudOS.last.id, cloudOS.last.name);
-        }
+        function resumeLastBook() { if (cloudOS.last && cloudOS.last.id) openReader(cloudOS.last.id, cloudOS.last.name); }
 
         async function openReader(file_id, fileName) {
             show('loader'); document.getElementById('loader-text').innerText = "Authenticating..."; setProgress(0);
-            activeFileId = file_id;
-            currentZoom = 1.0; applyZoom();
+            activeFileId = file_id; currentZoom = 1.0; renderedPages.clear(); pagesContainer.innerHTML = '';
             
             if(!cloudOS.last) cloudOS.last = {};
-            cloudOS.last.id = file_id; cloudOS.last.name = fileName;
-            syncToCloud(); 
+            cloudOS.last.id = file_id; cloudOS.last.name = fileName; syncToCloud(); 
             
             try {
                 const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${file_id}`);
@@ -530,187 +438,177 @@
                 if (!pathData.ok) throw new Error("Telegram API rejected file access.");
 
                 const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
-                
                 document.getElementById('file-manager-view').style.display = 'none';
                 document.getElementById('reader-view').style.display = 'flex';
                 document.getElementById('book-title-header').innerText = fileName; 
                 
-                document.getElementById('loader-text').innerText = "Streaming via Custom Proxy...";
+                document.getElementById('loader-text').innerText = "Streaming Proxy...";
                 const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
-                
                 const res = await fetch(proxyUrl);
-                if (!res.ok) throw new Error("Your custom proxy failed to fetch the file.");
+                if (!res.ok) throw new Error("Custom proxy failed.");
                 
-                document.getElementById('loader-text').innerText = "Loading to Memory...";
+                document.getElementById('loader-text').innerText = "Downloading...";
                 const arrayBuffer = await res.arrayBuffer();
                 const pdfBytes = new Uint8Array(arrayBuffer);
 
-                document.getElementById('loader-text').innerText = "Rendering PDF...";
+                document.getElementById('loader-text').innerText = "Initializing Reader...";
                 setProgress(-1);
 
                 const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
                 pdfDoc = await loadingTask.promise;
-                
                 pageCount = pdfDoc.numPages;
                 document.getElementById('page-count').innerText = pageCount;
                 
-                // Load local drawings if any exist for this file
                 try { drawingsMap = JSON.parse(localStorage.getItem(`DRAWINGS_${activeFileId}`)) || {}; } catch(e){ drawingsMap = {}; }
                 
-                await renderAllPages();
-                fetchLastPage(); 
-                updateBookmarkUI();
-                hide('loader');
+                await initLazyPages(); // Creates empty placeholders
+                fetchLastPage(); // Scrolls to correct box
+                updateBookmarkUI(); hide('loader');
 
-            } catch (err) { 
-                alert("Reader Error: " + err.message); 
-                hide('loader'); closeBook(); 
-            }
+            } catch (err) { alert("Reader Error: " + err.message); hide('loader'); closeBook(); }
         }
 
         function closeBook() {
-            document.getElementById('reader-view').style.display = 'none';
-            document.getElementById('file-manager-view').style.display = 'flex';
-            pagesContainer.innerHTML = '';
-            drawingsMap = {};
+            document.getElementById('reader-view').style.display = 'none'; document.getElementById('file-manager-view').style.display = 'flex';
+            pagesContainer.innerHTML = ''; renderedPages.clear(); pdfDoc = null;
             renderGrid(); 
         }
 
-        // --- HARDWARE ZOOM (Fixes Page 1 Reset & Mobile Smoothness) ---
-        function zoomIn() { currentZoom += 0.2; if(currentZoom > 3) currentZoom = 3; applyZoom(); }
-        function zoomOut() { currentZoom -= 0.2; if(currentZoom < 0.5) currentZoom = 0.5; applyZoom(); }
-        function applyZoom() {
-            zoomContainer.style.transform = `scale(${currentZoom})`;
-        }
+        // --- 1. LAZY LOADING ENGINE (Prevents Mobile Crash) ---
+        async function initLazyPages() {
+            const vWidth = viewport.clientWidth;
+            baseContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
 
-        // Desktop Wheel Zoom
-        viewport.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                e.deltaY > 0 ? zoomOut() : zoomIn();
-            }
-        }, { passive: false });
+            // Get Ratio from Page 1 without rendering
+            const page1 = await pdfDoc.getPage(1);
+            const vp1 = page1.getViewport({ scale: 1.0 });
+            basePageRatio = vp1.height / vp1.width;
 
-        // Mobile Pinch-to-Zoom
-        let initialDistance = null;
-        viewport.addEventListener('touchstart', e => {
-            if(e.touches.length === 2) {
-                initialDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-            }
-        }, {passive: false});
-        
-        viewport.addEventListener('touchmove', e => {
-            if(e.touches.length === 2 && initialDistance) {
-                e.preventDefault(); // Stop normal scrolling while pinching
-                let currentDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                let diff = currentDistance - initialDistance;
-                currentZoom += diff * 0.005;
-                if(currentZoom > 3) currentZoom = 3;
-                if(currentZoom < 0.5) currentZoom = 0.5;
-                applyZoom();
-                initialDistance = currentDistance;
-            }
-        }, {passive: false});
-
-        // --- HIGH DEFINITION RENDERING ---
-        async function renderAllPages() {
-            pagesContainer.innerHTML = '';
             for (let i = 1; i <= pageCount; i++) {
-                await createPageNode(i);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pdf-page-wrapper';
+                wrapper.id = `page-wrapper-${i}`;
+                wrapper.dataset.page = i;
+                wrapper.innerText = `Loading Page ${i}...`; // Placeholder text
+                
+                // Set native dimensions
+                wrapper.style.width = `${baseContainerWidth * currentZoom}px`;
+                wrapper.style.height = `${(baseContainerWidth * basePageRatio) * currentZoom}px`;
+                
+                pagesContainer.appendChild(wrapper);
+                pageObserver.observe(wrapper);
             }
         }
 
-        async function createPageNode(pageNum) {
-            const page = await pdfDoc.getPage(pageNum);
-            const containerWidth = viewport.clientWidth;
+        // Observes boxes. If box enters screen, render canvas inside it.
+        const pageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const pageNum = parseInt(entry.target.dataset.page);
+                    if (!renderedPages.has(pageNum)) {
+                        renderPageCanvas(pageNum, entry.target);
+                    }
+                }
+            });
+        }, { root: viewport, rootMargin: '800px 0px' }); // Load slightly off-screen
+
+        async function renderPageCanvas(pageNum, wrapper) {
+            renderedPages.add(pageNum);
+            wrapper.innerText = ''; // Clear text
             
-            // Base resolution (Mobile Blur Fix)
-            const dpr = window.devicePixelRatio || 1;
+            const page = await pdfDoc.getPage(pageNum);
+            const dpr = window.devicePixelRatio || 1; // High-res Mobile Fix
             const unscaledViewport = page.getViewport({ scale: 1.0 });
             
-            // Fit to screen width on load
-            const baseWidth = containerWidth < 600 ? (containerWidth - 20) : 800;
-            const cssScale = baseWidth / unscaledViewport.width;
-            
-            // Render at high resolution based on DPR
-            const renderViewport = page.getViewport({ scale: cssScale * dpr });
-            const displayViewport = page.getViewport({ scale: cssScale });
+            // Adjust box height if this specific page has a weird ratio
+            const actualRatio = unscaledViewport.height / unscaledViewport.width;
+            wrapper.style.height = `${(baseContainerWidth * actualRatio) * currentZoom}px`;
 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pdf-page-wrapper';
-            wrapper.style.width = `${displayViewport.width}px`; 
-            wrapper.style.height = `${displayViewport.height}px`;
-            wrapper.id = `page-wrapper-${pageNum}`;
-            
+            const cssScale = baseContainerWidth / unscaledViewport.width;
+            const renderViewport = page.getViewport({ scale: cssScale * dpr });
+
             const pdfCanvas = document.createElement('canvas');
             pdfCanvas.className = 'pdf-page-canvas';
             pdfCanvas.width = renderViewport.width; 
             pdfCanvas.height = renderViewport.height;
-            pdfCanvas.style.width = `${displayViewport.width}px`; 
-            pdfCanvas.style.height = `${displayViewport.height}px`;
+            // Native stretching
+            pdfCanvas.style.width = `100%`; pdfCanvas.style.height = `100%`;
             
             const annoCanvas = document.createElement('canvas');
             annoCanvas.className = 'annotation-canvas';
-            annoCanvas.width = displayViewport.width; // Draw at CSS resolution
-            annoCanvas.height = displayViewport.height;
+            annoCanvas.width = baseContainerWidth; annoCanvas.height = baseContainerWidth * actualRatio;
+            annoCanvas.style.width = `100%`; annoCanvas.style.height = `100%`;
 
-            wrapper.appendChild(pdfCanvas); 
-            wrapper.appendChild(annoCanvas);
-            pagesContainer.appendChild(wrapper);
+            wrapper.appendChild(pdfCanvas); wrapper.appendChild(annoCanvas);
 
             const ctx = pdfCanvas.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
             
-            setupAnnotations(annoCanvas, pageNum, 1.0); // Scale is handled by wrapper
+            setupAnnotations(annoCanvas, pageNum, baseContainerWidth);
             redrawAnnotations(annoCanvas, pageNum);
+        }
+
+        // --- 2. NATIVE ZOOM (Fixes Scrollbar jumping) ---
+        function zoomIn() { currentZoom += 0.2; if(currentZoom > 3) currentZoom = 3; applyZoom(); }
+        function zoomOut() { currentZoom -= 0.2; if(currentZoom < 0.5) currentZoom = 0.5; applyZoom(); }
+        
+        function applyZoom() {
+            // Simply resize the wrappers. The DOM handles the scrollbars natively.
+            document.querySelectorAll('.pdf-page-wrapper').forEach(w => {
+                const wWidth = baseContainerWidth * currentZoom;
+                w.style.width = `${wWidth}px`;
+                // Estimate height (if canvas is rendered, use its aspect ratio, else use base)
+                const anno = w.querySelector('.annotation-canvas');
+                const ratio = anno ? (anno.height / anno.width) : basePageRatio;
+                w.style.height = `${wWidth * ratio}px`;
+            });
         }
 
         // --- SEARCH ENGINE ---
         async function searchPDF() {
-            const query = document.getElementById('search-input').value.toLowerCase();
+            const query = document.getElementById('pdf-search-input').value.toLowerCase();
             if(!query) return;
-            
             document.getElementById('sync-status').innerText = "Searching...";
             for(let i = 1; i <= pageCount; i++) {
                 const page = await pdfDoc.getPage(i);
                 const textContent = await page.getTextContent();
                 const textString = textContent.items.map(item => item.str).join(' ').toLowerCase();
-                
                 if(textString.includes(query)) {
                     document.getElementById('sync-status').innerText = `Found on Pg ${i}`;
-                    document.getElementById(`page-wrapper-${i}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById(`page-wrapper-${i}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                 }
             }
-            document.getElementById('sync-status').innerText = "No results found.";
+            document.getElementById('sync-status').innerText = "Not found.";
         }
 
-        // --- ADVANCED ANNOTATIONS (Pen, Highlight, Eraser) ---
+        // --- ANNOTATIONS ---
         function setTool(toolName) {
             currentTool = toolName;
             document.querySelectorAll('.reader-controls .edge-btn').forEach(b => b.classList.remove('active-tool'));
             document.getElementById(`tool-${toolName}`).classList.add('active-tool');
             
-            const pointerStyle = toolName === 'pan' ? 'none' : 'auto';
+            const ptr = toolName === 'pan' ? 'none' : 'auto';
             document.querySelectorAll('.annotation-canvas').forEach(c => {
-                c.style.pointerEvents = pointerStyle;
+                c.style.pointerEvents = ptr;
                 if(toolName === 'eraser') c.style.cursor = 'cell';
                 else if(toolName !== 'pan') c.style.cursor = 'crosshair';
             });
         }
 
-        function setupAnnotations(canvas, pageNum, scale) {
-            const ctx = canvas.getContext('2d'); 
-            let currentPath = null;
+        function setupAnnotations(canvas, pageNum, baseWidth) {
+            const ctx = canvas.getContext('2d'); let currentPath = null;
             
-            // Handle touch and mouse identically
             const startDraw = (clientX, clientY) => {
                 if (currentTool === 'pan') return;
                 isDrawing = true; 
                 const rect = canvas.getBoundingClientRect();
-                // Adjust for CSS Zoom Transform
-                const x = (clientX - rect.left) / currentZoom; 
-                const y = (clientY - rect.top) / currentZoom;
+                // Map screen coordinates back to base canvas resolution
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (clientX - rect.left) * scaleX; 
+                const y = (clientY - rect.top) * scaleY;
+                
                 currentPath = { tool: currentTool, color: activeColor, points: [{x, y}] };
                 if (!drawingsMap[pageNum]) drawingsMap[pageNum] = [];
                 drawingsMap[pageNum].push(currentPath);
@@ -722,25 +620,21 @@
             const moveDraw = (clientX, clientY) => {
                 if (!isDrawing || !currentPath) return;
                 const rect = canvas.getBoundingClientRect();
-                const x = (clientX - rect.left) / currentZoom; 
-                const y = (clientY - rect.top) / currentZoom;
-                currentPath.points.push({x, y}); 
-                ctx.lineTo(x, y); ctx.stroke();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (clientX - rect.left) * scaleX; 
+                const y = (clientY - rect.top) * scaleY;
+                
+                currentPath.points.push({x, y}); ctx.lineTo(x, y); ctx.stroke();
             };
 
             const endDraw = () => {
-                if(isDrawing) {
-                    isDrawing = false;
-                    // Save locally (cannot sync to cloud due to payload size limits)
-                    localStorage.setItem(`DRAWINGS_${activeFileId}`, JSON.stringify(drawingsMap));
-                }
+                if(isDrawing) { isDrawing = false; localStorage.setItem(`DRAWINGS_${activeFileId}`, JSON.stringify(drawingsMap)); }
             };
 
             canvas.onmousedown = (e) => startDraw(e.clientX, e.clientY);
             canvas.onmousemove = (e) => moveDraw(e.clientX, e.clientY);
-            canvas.onmouseup = endDraw; 
-            canvas.onmouseleave = endDraw;
-
+            canvas.onmouseup = endDraw; canvas.onmouseleave = endDraw;
             canvas.addEventListener('touchstart', e => { if(e.touches.length === 1) { e.preventDefault(); startDraw(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
             canvas.addEventListener('touchmove', e => { if(e.touches.length === 1) { e.preventDefault(); moveDraw(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
             canvas.addEventListener('touchend', endDraw);
@@ -748,14 +642,11 @@
 
         function applyStyle(ctx, tool, color) {
             if (tool === 'pen') { 
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha = 1.0; ctx.lineCap = 'round'; 
+                ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha = 1.0; ctx.lineCap = 'round'; 
             } else if (tool === 'highlight') { 
-                ctx.globalCompositeOperation = 'multiply'; // Makes highlight translucent over black text
-                ctx.strokeStyle = color; ctx.lineWidth = 18; ctx.globalAlpha = 0.4; ctx.lineCap = 'butt'; 
+                ctx.globalCompositeOperation = 'multiply'; ctx.strokeStyle = color; ctx.lineWidth = 18; ctx.globalAlpha = 0.3; ctx.lineCap = 'butt'; 
             } else if (tool === 'eraser') {
-                ctx.globalCompositeOperation = 'destination-out'; // Erases pixels
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 25; ctx.globalAlpha = 1.0; ctx.lineCap = 'round';
+                ctx.globalCompositeOperation = 'destination-out'; ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 25; ctx.globalAlpha = 1.0; ctx.lineCap = 'round';
             }
         }
 
@@ -768,14 +659,14 @@
                 stroke.points.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
                 ctx.stroke();
             });
-            // Reset composite operation so next draw is normal
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        // --- CLOUD BOOKMARKS & PROGRESS ---
+        // --- 3. FIXED SCROLL & BOOKMARKS ---
         viewport.addEventListener('scroll', () => {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let current = 1;
+            // Find which box is in the center of the screen
             wrappers.forEach((el, idx) => {
                 const rect = el.getBoundingClientRect();
                 if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) current = idx + 1;
@@ -806,27 +697,18 @@
         function toggleBookmark() {
             if(!cloudOS.bookmarks) cloudOS.bookmarks = [];
             const existingIndex = cloudOS.bookmarks.findIndex(b => b.fileId === activeFileId && b.page === currentPageNum);
-            
-            if(existingIndex >= 0) {
-                cloudOS.bookmarks.splice(existingIndex, 1); // Remove
-            } else {
-                cloudOS.bookmarks.push({ fileId: activeFileId, page: currentPageNum }); // Add
-            }
-            updateBookmarkUI();
-            syncToCloud();
+            if(existingIndex >= 0) cloudOS.bookmarks.splice(existingIndex, 1);
+            else cloudOS.bookmarks.push({ fileId: activeFileId, page: currentPageNum }); 
+            updateBookmarkUI(); syncToCloud();
         }
 
         function updateBookmarkUI() {
             const isBookmarked = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === activeFileId && b.page === currentPageNum);
             const btn = document.getElementById('bookmark-btn');
-            if(isBookmarked) {
-                btn.classList.add('bookmarked');
-            } else {
-                btn.classList.remove('bookmarked');
-            }
+            if(isBookmarked) btn.classList.add('bookmarked');
+            else btn.classList.remove('bookmarked');
         }
 
-        // Boot
         window.addEventListener('load', syncFromCloud);
     </script>
 </body>

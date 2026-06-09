@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shivam PDF Reader</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: #f3f3f3; color: #2b2b2b;
+        }
+
+        /* --- TOOLBAR --- */
+        .edge-toolbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 48px; background-color: #2b2b2b; color: #ffffff;
+            display: flex; justify-content: space-between; align-items: center; padding: 0 16px; z-index: 1000; box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .left-group { display: flex; align-items: center; gap: 12px; }
+        .app-logo { font-size: 18px; }
+        #book-title { font-size: 14px; margin: 0; color: #f5f5f5; font-weight: 400; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .center-controls { display: flex; align-items: center; gap: 4px; }
+        .edge-btn {
+            background: transparent; color: #e0e0e0; border: none; height: 36px; padding: 0 12px;
+            border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .edge-btn:hover { background-color: rgba(255, 255, 255, 0.1); color: #ffffff; }
+        .edge-btn.active-tool { background-color: rgba(255, 255, 255, 0.2); border-bottom: 2px solid #0078d4; }
+        
+        .right-group { display: flex; align-items: center; }
+        .status-tracker { font-size: 12px; color: #cccccc; }
+
+        /* --- VIEWS --- */
+        #library-view { width: 100%; height: 100%; overflow-y: auto; padding: 70px 40px 40px; box-sizing: border-box; display: block; }
+        #reader-view { display: none; width: 100%; height: 100%; }
+        
+        .library-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d1d1; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .header-actions { display: flex; gap: 10px; }
+        
+        /* Resume Banner */
+        .resume-banner { background: #0078d4; color: white; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; cursor: pointer; display: none; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,120,212,0.3); transition: transform 0.2s; }
+        .resume-banner:hover { transform: translateY(-2px); }
+        .resume-text { font-size: 14px; font-weight: 600; }
+
+        /* Grid */
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        .book-card {
+            background: #fff; border-radius: 6px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            cursor: pointer; transition: all 0.2s; border: 1px solid #e0e0e0; text-align: center; position: relative;
+        }
+        .book-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.1); border-color: #0078d4; transform: translateY(-3px); }
+        .folder-card { background: #fdfaf2; border-color: #e5d8b3; }
+        .folder-card:hover { border-color: #dcb343; }
+        .book-icon { font-size: 40px; margin-bottom: 10px; }
+        .book-title { font-size: 13px; font-weight: 600; word-break: break-word; color: #333; }
+        
+        /* Card Actions */
+        .move-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.05); border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; display: none; }
+        .book-card:hover .move-btn { display: block; }
+        .move-btn:hover { background: #e0e0e0; }
+
+        /* Buttons */
+        .action-btn { background: #e0e0e0; color: #333; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; transition: background 0.2s; }
+        .action-btn:hover { background: #ccc; }
+        .upload-btn-container { position: relative; overflow: hidden; display: inline-block; }
+        .upload-btn { background: #0078d4; color: white; }
+        .upload-btn:hover { background: #106ebe; }
+        .upload-btn-container input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+
+        /* --- READER CANVAS --- */
+        .viewer-viewport {
+            width: 100%; height: calc(100% - 48px); margin-top: 48px; overflow-y: auto; overflow-x: auto;
+            padding: 24px 0 80px 0; box-sizing: border-box; touch-action: pan-x pan-y;
+        }
+        .pdf-pages-container { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; box-sizing: border-box; padding: 0 16px; }
+        .pdf-page-wrapper { position: relative; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); background: #ffffff; border-radius: 2px; }
+        .pdf-page-canvas { display: block; }
+        .annotation-canvas { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: auto; cursor: crosshair; }
+        .edge-page-pill {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background-color: rgba(43, 43, 43, 0.9);
+            color: #ffffff; padding: 6px 16px; border-radius: 20px; font-size: 13px; z-index: 1000; pointer-events: none; backdrop-filter: blur(4px);
+        }
+
+        /* --- MODALS & PROGRESS BAR --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(243, 243, 243, 0.95);
+            display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column;
+        }
+        .modal-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 320px; text-align: center; border: 1px solid #e0e0e0; max-height: 80vh; overflow-y: auto; }
+        .modal-card h2 { margin-top: 0; font-size: 18px; color: #2b2b2b; }
+        
+        .progress-container { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; margin-top: 15px; overflow: hidden; display: none; }
+        .progress-bar { width: 0%; height: 100%; background: #0078d4; transition: width 0.1s; }
+
+        .folder-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 14px; }
+        .folder-list-item:hover { background: #f0f0f0; }
+
+        #loader, #move-modal { display: none; }
+
+        @media (max-width: 600px) {
+            .center-controls { display: none; }
+            #book-title { display: none; }
+            .library-header { flex-direction: column; text-align: center; }
+            .header-actions { flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="overlay">
+        <div class="modal-card">
+            <h2 id="loader-text">Loading...</h2>
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="move-modal" class="overlay">
+        <div class="modal-card">
+            <h2>Move to Folder</h2>
+            <div id="folder-list" style="margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+            <button class="action-btn" style="margin-top: 15px; width: 100%;" onclick="hide('move-modal')">Cancel</button>
+        </div>
+    </div>
+    
+    <div id="library-view">
+        <div class="edge-toolbar" style="position: absolute;">
+            <div class="left-group"><span class="app-logo">📚</span><h2 id="library-title">Shivam PDF Reader</h2></div>
+            <div class="right-group"><span class="status-tracker">Cloud Sync</span></div>
+        </div>
+
+        <div class="resume-banner" id="resume-banner" onclick="resumeLastBook()">
+            <span class="resume-text">📖 Resume: <span id="resume-title">Book Name</span></span>
+            <span>Jump back in ➜</span>
+        </div>
+
+        <div class="library-header">
+            <h1 id="view-heading" style="font-size: 20px; font-weight: 400; margin: 0; color: #2b2b2b;">My Drive</h1>
+            <div class="header-actions">
+                <button class="action-btn" id="back-btn" style="display: none;" onclick="openFolder(null)">🔙 Back</button>
+                <button class="action-btn" onclick="createNewFolder()">📁 New Folder</button>
+                <div class="upload-btn-container">
+                    <button class="action-btn upload-btn">➕ Upload PDF</button>
+                    <input type="file" id="pdf-upload" accept="application/pdf">
+                </div>
+            </div>
+        </div>
+        <div class="book-grid" id="book-grid"></div>
+    </div>
+
+    <div id="reader-view">
+        <div class="edge-toolbar">
+            <div class="left-group">
+                <button class="edge-btn" onclick="closeBook()">🔙 Library</button>
+                <h2 id="book-title">Document</h2>
+            </div>
+            <div class="center-controls">
+                <button class="edge-btn" style="background-color: #0078d4; color: white;" onclick="forceDownloadPDF()">💾 Download PDF</button>
+                <div style="width: 1px; height: 20px; background: #555; margin: 0 10px;"></div>
+                <button class="edge-btn active-tool" id="tool-pan" onclick="setTool('pan')">✋ Pan</button>
+                <button class="edge-btn" id="tool-pen" onclick="setTool('pen')">🖊️ Pen</button>
+                <button class="edge-btn" id="tool-highlight" onclick="setTool('highlight')">🖍️ Highlight</button>
+            </div>
+            <div class="right-group">
+                <span class="status-tracker" id="sync-status">Ready</span>
+            </div>
+        </div>
+
+        <div id="viewer-viewport" class="viewer-viewport">
+            <div id="pdf-pages-container" class="pdf-pages-container"></div>
+        </div>
+
+        <div class="edge-page-pill">
+            Page <span id="page-number">1</span> of <span id="page-count">?</span>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTH & DATA STRUCTURE ---
+        let TELEGRAM_BOT_TOKEN = localStorage.getItem('MY_BOT_TOKEN');
+        let TELEGRAM_CHAT_ID = localStorage.getItem('MY_CHAT_ID');
+
+        if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+            TELEGRAM_BOT_TOKEN = prompt("Enter your Telegram Bot Token:");
+            TELEGRAM_CHAT_ID = prompt("Enter your Telegram Chat ID:");
+            localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
+            localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
+        }
+
+        let cloudOS = JSON.parse(localStorage.getItem('CLOUD_OS_DB'));
+        if (!cloudOS || Array.isArray(cloudOS)) {
+            const oldData = Array.isArray(cloudOS) ? cloudOS : (JSON.parse(localStorage.getItem('MY_CLOUD_LIBRARY')) || []);
+            cloudOS = { folders: {}, books: oldData, lastRead: null };
+            saveDB();
+        }
+
+        let currentFolderView = null; 
+        let movingBookId = null; 
+        let globalRawPdfUrl = null; // Saved for the Direct Download button
+
+        function saveDB() { localStorage.setItem('CLOUD_OS_DB', JSON.stringify(cloudOS)); }
+
+        // --- UI HELPERS ---
+        const show = (id) => document.getElementById(id).style.display = 'flex';
+        const hide = (id) => document.getElementById(id).style.display = 'none';
+        
+        function setProgress(percent) {
+            const container = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            if (percent < 0) { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            bar.style.width = percent + '%';
+        }
+
+        // --- DIRECT DOWNLOAD FALLBACK ---
+        function forceDownloadPDF() {
+            if (globalRawPdfUrl) {
+                window.open(globalRawPdfUrl, '_blank');
+            } else {
+                alert("File URL not located yet!");
+            }
+        }
+
+        // --- NETWORK WRAPPERS ---
+        function uploadFileWithProgress(formData, token, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `https://api.telegram.org/bot${token}/sendDocument`);
+                xhr.upload.onprogress = e => {
+                    if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+                };
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+                    else reject(new Error("Telegram Server Rejected File."));
+                };
+                xhr.onerror = () => reject(new Error("Network connection dropped."));
+                xhr.send(formData);
+            });
+        }
+
+        // --- LIBRARY RENDERER ---
+        async function loadLibrary() {
+            show('loader'); document.getElementById('loader-text').innerText = "Syncing Drive..."; setProgress(-1);
+            
+            try {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?limit=50`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                for (let i = data.result.length - 1; i >= 0; i--) {
+                    const msg = data.result[i].message || data.result[i].channel_post;
+                    if (msg && msg.document && msg.document.mime_type === 'application/pdf') {
+                        if (!cloudOS.books.find(b => b.id === msg.document.file_id)) {
+                            cloudOS.books.push({
+                                id: msg.document.file_id,
+                                name: msg.document.file_name || "Document.pdf",
+                                size: (msg.document.file_size / 1024 / 1024).toFixed(2) + " MB",
+                                folderId: null
+                            });
+                        }
+                    }
+                }
+                saveDB();
+            } catch (err) { console.warn("Background sync offline."); }
+
+            renderGrid();
+            hide('loader');
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('book-grid');
+            grid.innerHTML = '';
+
+            if (cloudOS.lastRead && !currentFolderView) {
+                const lastBook = cloudOS.books.find(b => b.id === cloudOS.lastRead);
+                if (lastBook) {
+                    document.getElementById('resume-title').innerText = lastBook.name;
+                    document.getElementById('resume-banner').style.display = 'flex';
+                } else {
+                    document.getElementById('resume-banner').style.display = 'none';
+                }
+            } else {
+                document.getElementById('resume-banner').style.display = 'none';
+            }
+
+            if (!currentFolderView) {
+                document.getElementById('view-heading').innerText = "My Drive";
+                document.getElementById('back-btn').style.display = 'none';
+
+                for (const [fId, fName] of Object.entries(cloudOS.folders)) {
+                    const card = document.createElement('div');
+                    card.className = 'book-card folder-card';
+                    card.innerHTML = `<div class="book-icon">📁</div><div class="book-title">${fName}</div>`;
+                    card.onclick = () => openFolder(fId);
+                    grid.appendChild(card);
+                }
+
+                const rootBooks = cloudOS.books.filter(b => !b.folderId);
+                [...rootBooks].reverse().forEach(book => createBookCard(book, grid));
+
+            } else {
+                document.getElementById('view-heading').innerText = "📁 " + cloudOS.folders[currentFolderView];
+                document.getElementById('back-btn').style.display = 'inline-block';
+
+                const folderBooks = cloudOS.books.filter(b => b.folderId === currentFolderView);
+                if (folderBooks.length === 0) grid.innerHTML = `<p style="grid-column: 1/-1; color:#888;">Folder is empty.</p>`;
+                [...folderBooks].reverse().forEach(book => createBookCard(book, grid));
+            }
+        }
+
+        function createBookCard(book, grid) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
+                <button class="move-btn" title="Move to Folder">⮀ Move</button>
+                <div class="book-icon">📄</div>
+                <div class="book-title">${book.name}</div>
+                <div style="font-size:11px; color:#888; margin-top:8px;">${book.size}</div>
+            `;
+            
+            card.querySelector('.move-btn').onclick = (e) => {
+                e.stopPropagation();
+                openMoveModal(book.id);
+            };
+            
+            card.onclick = () => openReader(book.id, book.name);
+            grid.appendChild(card);
+        }
+
+        // --- FOLDER MANAGEMENT ---
+        function createNewFolder() {
+            const name = prompt("Enter folder name:");
+            if (!name) return;
+            const fId = 'folder_' + Date.now();
+            cloudOS.folders[fId] = name;
+            saveDB();
+            renderGrid();
+        }
+
+        function openFolder(fId) {
+            currentFolderView = fId;
+            renderGrid();
+        }
+
+        function openMoveModal(bookId) {
+            movingBookId = bookId;
+            const list = document.getElementById('folder-list');
+            list.innerHTML = `<div class="folder-list-item" onclick="moveTo(null)">🏠 Root Drive</div>`;
+            
+            for (const [fId, fName] of Object.entries(cloudOS.folders)) {
+                list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${fId}')">📁 ${fName}</div>`;
+            }
+            show('move-modal');
+        }
+
+        function moveTo(fId) {
+            const book = cloudOS.books.find(b => b.id === movingBookId);
+            if (book) book.folderId = fId;
+            saveDB();
+            hide('move-modal');
+            renderGrid();
+        }
+
+        // --- UPLOADER ---
+        document.getElementById('pdf-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const CHUNK_LIMIT = 18 * 1024 * 1024; 
+
+            try {
+                if (file.size <= CHUNK_LIMIT) {
+                    show('loader'); document.getElementById('loader-text').innerText = `Uploading ${file.name}...`;
+                    const formData = new FormData();
+                    formData.append('chat_id', TELEGRAM_CHAT_ID);
+                    formData.append('document', file);
+                    
+                    const data = await uploadFileWithProgress(formData, TELEGRAM_BOT_TOKEN, setProgress);
+                    
+                    if (data.result && data.result.document) {
+                        cloudOS.books.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", folderId: currentFolderView });
+                        saveDB();
+                    }
+                } else {
+                    show('loader'); document.getElementById('loader-text').innerText = `Preparing to Slice Huge File...`; setProgress(-1);
+                    await new Promise(r => setTimeout(r, 100));
+                    
+                    const numChunks = Math.ceil(file.size / CHUNK_LIMIT);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const rawPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                    const totalPages = rawPdf.getPageCount();
+                    const pagesPerChunk = Math.ceil(totalPages / numChunks);
+
+                    const autoFolderId = 'folder_' + Date.now();
+                    cloudOS.folders[autoFolderId] = file.name.replace('.pdf', '') + " (Parts)";
+                    
+                    for (let i = 0; i < numChunks; i++) {
+                        document.getElementById('loader-text').innerText = `Slicing Volume ${i+1} of ${numChunks}...`;
+                        setProgress(-1); await new Promise(r => setTimeout(r, 50)); 
+
+                        const newDoc = await PDFLib.PDFDocument.create();
+                        const start = i * pagesPerChunk;
+                        const end = Math.min(start + pagesPerChunk, totalPages);
+                        
+                        const indices = []; for(let j = start; j < end; j++) indices.push(j);
+                        const copiedPages = await newDoc.copyPages(rawPdf, indices);
+                        copiedPages.forEach(p => newDoc.addPage(p));
+                        
+                        const pdfBytes = await newDoc.save();
+                        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        
+                        const formData = new FormData();
+                        formData.append('chat_id', TELEGRAM_CHAT_ID);
+                        const volName = `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`;
+                        formData.append('document', blob, volName);
+                        
+                        document.getElementById('loader-text').innerText = `Uploading Volume ${i+1}...`;
+                        const data = await uploadFileWithProgress(formData, TELEGRAM_BOT_TOKEN, setProgress);
+                        
+                        if (data.result && data.result.document) {
+                            cloudOS.books.push({ id: data.result.document.file_id, name: volName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", folderId: autoFolderId });
+                            saveDB();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Upload Failed: " + err.message);
+            }
+            
+            hide('loader');
+            renderGrid();
+            e.target.value = ''; 
+        });
+
+        // --- READER SYSTEM ---
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        let pdfDoc = null, pageCount = 0, zoomScale = 1.0, currentTool = 'pan', isDrawing = false, drawingsMap = {};
+        const viewport = document.getElementById('viewer-viewport');
+        const pagesContainer = document.getElementById('pdf-pages-container');
+        let activeFileId = null;
+
+        function resumeLastBook() {
+            if (cloudOS.lastRead) {
+                const book = cloudOS.books.find(b => b.id === cloudOS.lastRead);
+                if (book) openReader(book.id, book.name);
+            }
+        }
+
+        async function openReader(file_id, fileName) {
+            show('loader'); document.getElementById('loader-text').innerText = "Locating File..."; setProgress(0);
+            activeFileId = file_id;
+            
+            cloudOS.lastRead = file_id;
+            saveDB();
+            
+            try {
+                // 1. Get Path from Telegram
+                const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${file_id}`);
+                const pathData = await pathRes.json();
+                
+                if (!pathData.ok || !pathData.result.file_path) { throw new Error("Telegram blocked the file. It might be expired."); }
+
+                const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
+                globalRawPdfUrl = rawUrl; // Save for the Direct Download button
+                
+                document.getElementById('library-view').style.display = 'none';
+                document.getElementById('reader-view').style.display = 'block';
+                document.getElementById('book-title').innerText = fileName;
+                
+                // 2. The Multi-Proxy Router
+                const proxies = [
+                    `https://api.codetabs.com/v1/proxy?quest=${rawUrl}`,
+                    `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+                    `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`
+                ];
+
+                let pdfBytes = null;
+                let lastError = "";
+
+                for (let i = 0; i < proxies.length; i++) {
+                    try {
+                        document.getElementById('loader-text').innerText = `Bypassing Security (Route ${i+1}/3)...`;
+                        const res = await fetch(proxies[i]);
+                        if (!res.ok) throw new Error("Proxy connection failed.");
+                        
+                        document.getElementById('loader-text').innerText = "Downloading...";
+                        const arrayBuffer = await res.arrayBuffer();
+                        pdfBytes = new Uint8Array(arrayBuffer);
+                        break; 
+                    } catch (e) {
+                        lastError = e.message;
+                        console.warn(`Proxy Route ${i+1} failed. Trying next...`);
+                    }
+                }
+
+                if (!pdfBytes) throw new Error("All secure proxy routes were blocked.");
+
+                document.getElementById('loader-text').innerText = "Rendering PDF...";
+                setProgress(-1);
+
+                // Feed raw data directly into PDF.js
+                const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+                pdfDoc = await loadingTask.promise;
+                
+                pageCount = pdfDoc.numPages;
+                document.getElementById('page-count').innerText = pageCount;
+                zoomScale = 1.0;
+                
+                renderAllPages();
+                fetchLastPage(); 
+                hide('loader');
+
+            } catch (err) { 
+                alert("Stream Failed: " + err.message + "\n\n(Click 'OK', then click the blue 'Download PDF' button at the top to save it directly to your computer!)"); 
+                hide('loader'); 
+            }
+        }
+
+        function closeBook() {
+            document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('library-view').style.display = 'block';
+            pagesContainer.innerHTML = '';
+            drawingsMap = {};
+            renderGrid(); 
+        }
+
+        viewport.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                zoomScale += e.deltaY > 0 ? -0.1 : 0.1;
+                if (zoomScale < 0.5) zoomScale = 0.5;
+                if (zoomScale > 3.0) zoomScale = 3.0;
+                clearTimeout(window.zoomTimeout);
+                window.zoomTimeout = setTimeout(renderAllPages, 150);
+            }
+        }, { passive: false });
+
+        function renderAllPages() {
+            pagesContainer.innerHTML = '';
+            for (let i = 1; i <= pageCount; i++) createPageNode(i);
+        }
+
+        function createPageNode(pageNum) {
+            pdfDoc.getPage(pageNum).then((page) => {
+                const containerWidth = viewport.clientWidth;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const baseWidth = containerWidth < 600 ? (containerWidth - 20) : 800;
+                const scaleFactor = (baseWidth * zoomScale) / unscaledViewport.width;
+                const vp = page.getViewport({ scale: scaleFactor });
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pdf-page-wrapper';
+                wrapper.style.width = `${vp.width}px`; wrapper.style.height = `${vp.height}px`;
+                
+                const pdfCanvas = document.createElement('canvas');
+                pdfCanvas.className = 'pdf-page-canvas';
+                pdfCanvas.height = vp.height; pdfCanvas.width = vp.width;
+                
+                const annoCanvas = document.createElement('canvas');
+                annoCanvas.className = 'annotation-canvas';
+                annoCanvas.height = vp.height; annoCanvas.width = vp.width;
+
+                wrapper.appendChild(pdfCanvas); wrapper.appendChild(annoCanvas);
+                pagesContainer.appendChild(wrapper);
+
+                page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport: vp }).promise.then(() => {
+                    setupAnnotations(annoCanvas, pageNum, scaleFactor);
+                    redrawAnnotations(annoCanvas, pageNum, scaleFactor);
+                });
+            });
+        }
+
+        function setTool(toolName) {
+            currentTool = toolName;
+            document.querySelectorAll('.edge-btn').forEach(b => b.classList.remove('active-tool'));
+            document.getElementById(`tool-${toolName}`).classList.add('active-tool');
+            document.querySelectorAll('.annotation-canvas').forEach(c => c.style.pointerEvents = toolName === 'pan' ? 'none' : 'auto');
+        }
+
+        function setupAnnotations(canvas, pageNum, scale) {
+            const ctx = canvas.getContext('2d'); let currentPath = null;
+            canvas.onmousedown = (e) => {
+                if (currentTool === 'pan') return;
+                isDrawing = true; const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale, y = (e.clientY - rect.top) / scale;
+                currentPath = { tool: currentTool, points: [{x, y}] };
+                if (!drawingsMap[pageNum]) drawingsMap[pageNum] = [];
+                drawingsMap[pageNum].push(currentPath);
+                applyStyle(ctx, currentTool); ctx.beginPath(); ctx.moveTo(x * scale, y * scale);
+            };
+            canvas.onmousemove = (e) => {
+                if (!isDrawing || !currentPath) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale, y = (e.clientY - rect.top) / scale;
+                currentPath.points.push({x, y}); ctx.lineTo(x * scale, y * scale); ctx.stroke();
+            };
+            canvas.onmouseup = () => isDrawing = false; canvas.onmouseleave = () => isDrawing = false;
+        }
+
+        function applyStyle(ctx, tool) {
+            if (tool === 'pen') { ctx.strokeStyle = '#d13438'; ctx.lineWidth = 2; ctx.globalAlpha = 1.0; ctx.lineCap = 'round'; } 
+            else if (tool === 'highlight') { ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 16; ctx.globalAlpha = 0.4; ctx.lineCap = 'butt'; }
+        }
+
+        function redrawAnnotations(canvas, pageNum, scale) {
+            if (!drawingsMap[pageNum]) return;
+            const ctx = canvas.getContext('2d');
+            drawingsMap[pageNum].forEach(stroke => {
+                applyStyle(ctx, stroke.tool); ctx.beginPath();
+                stroke.points.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x * scale, pt.y * scale) : ctx.lineTo(pt.x * scale, pt.y * scale));
+                ctx.stroke();
+            });
+        }
+
+        // --- BOOKMARKS & RESUME PAGE ---
+        viewport.addEventListener('scroll', () => {
+            const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+            let current = 1;
+            wrappers.forEach((el, idx) => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) current = idx + 1;
+            });
+            document.getElementById('page-number').innerText = current;
+            
+            clearTimeout(window.syncTimeout);
+            window.syncTimeout = setTimeout(() => {
+                localStorage.setItem(`SYNC_PAGE_${activeFileId}`, current);
+                document.getElementById('sync-status').innerText = "✅ Saved locally";
+            }, 500);
+        });
+
+        function fetchLastPage() {
+            const localSavedPage = localStorage.getItem(`SYNC_PAGE_${activeFileId}`);
+            if (localSavedPage) {
+                const targetPage = parseInt(localSavedPage, 10);
+                document.getElementById('sync-status').innerText = `🔄 Restored Pg ${targetPage}`;
+                setTimeout(() => {
+                    const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+                    if (wrappers[targetPage - 1]) wrappers[targetPage - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 800);
+                return;
+            }
+            document.getElementById('sync-status').innerText = "ℹ️ Ready";
+        }
+
+        // Boot
+        window.addEventListener('load', loadLibrary);
+    </script>
+</body>
+</html>

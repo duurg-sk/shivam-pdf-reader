@@ -71,9 +71,9 @@
         .card-footer button:hover { background: rgba(0,0,0,0.05); }
 
         /* --- READER PAGE --- */
-        #reader-view { display: none; width: 100%; height: 100%; flex-direction: column; background: #e5e5e5; }
+        #reader-view { display: none; width: 100%; height: 100%; flex-direction: column; background: #e5e5e5; position: relative; }
         
-        .reader-toolbar { width: 100%; min-height: 50px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; box-sizing: border-box; flex-shrink: 0; flex-wrap: wrap; gap: 10px; z-index: 100; }
+        .reader-toolbar { width: 100%; min-height: 50px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; box-sizing: border-box; flex-shrink: 0; flex-wrap: wrap; gap: 10px; z-index: 100; transition: transform 0.3s; }
         .reader-controls { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
         .active-tool { background-color: rgba(255, 255, 255, 0.2); border-bottom: 2px solid var(--primary); }
         #book-title-header { margin: 0; font-size: 14px; font-weight: 400; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -82,18 +82,34 @@
         .search-container input { background: transparent; border: none; color: white; padding: 6px; font-size: 13px; width: 100px; outline: none; }
         .color-picker { width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px; cursor: pointer; background: transparent; }
 
-        /* Native Zoom Architecture */
-        .viewer-viewport { flex: 1; overflow-y: auto; overflow-x: auto; touch-action: pan-x pan-y; padding: 30px 0 80px 0; }
-        .pdf-pages-container { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+        /* Native Zoom Architecture & Text Selection */
+        .viewer-viewport { flex: 1; overflow-y: auto; overflow-x: auto; touch-action: pan-x pan-y; padding: 30px 0 80px 0; position: relative; }
+        .zoom-container { transform-origin: 0 0; transition: transform 0.1s ease-out; min-width: 100%; display: flex; flex-direction: column; align-items: center; } /* FIX: Top-Left Origin */
+        
+        .pdf-pages-container { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; padding-bottom: 50px; }
         
         .pdf-page-wrapper { position: relative; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); background: #ffffff; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 12px; color: #888; }
         .pdf-page-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 4px; }
-        .annotation-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: auto; }
+        
+        /* NEW: Text Layer for Selection */
+        .text-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; line-height: 1.0; z-index: 5; pointer-events: auto; }
+        .text-layer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+        .text-layer ::selection { background: rgba(0, 120, 212, 0.3); color: transparent; }
 
-        .reader-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 1000; }
+        .annotation-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; } /* Default none for Pan/Select mode */
+
+        .reader-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 1000; transition: transform 0.3s; }
         .edge-page-pill { background-color: rgba(43, 43, 43, 0.9); color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .bookmark-btn { background-color: rgba(43, 43, 43, 0.9); border: none; color: #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; }
         .bookmark-btn.bookmarked { background-color: #ffb900; color: #000; }
+
+        /* Immersive Mode Toggle */
+        .immersive-toggle { position: fixed; bottom: 20px; right: 20px; background: rgba(43,43,43,0.6); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; cursor: pointer; z-index: 1001; backdrop-filter: blur(4px); transition: all 0.2s; }
+        .immersive-toggle:hover { background: rgba(43,43,43,0.9); }
+
+        /* Hide Toolbars Class */
+        .immersive-mode .reader-toolbar { transform: translateY(-100%); position: absolute; }
+        .immersive-mode .reader-footer { transform: translate(-50%, 150%); }
 
         /* --- MODALS --- */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; backdrop-filter: blur(5px); }
@@ -102,7 +118,7 @@
         .progress-bar { width: 0%; height: 100%; background: var(--primary); transition: width 0.2s ease-in-out; }
         .folder-list-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 14px; }
         
-        #loader, #move-modal { display: none; }
+        #loader, #move-modal, #bookmarks-modal { display: none; }
 
         @media (max-width: 768px) {
             #file-manager-view { flex-direction: column; }
@@ -112,6 +128,7 @@
             .reader-controls span { display: none; }
             #book-title-header { display: none; }
             .fm-search-bar { width: 100%; }
+            .zoom-container { align-items: flex-start; } /* Helps with mobile left-align zoom */
         }
     </style>
 </head>
@@ -131,6 +148,14 @@
             <h2>Move File</h2>
             <div id="folder-list" style="margin-top: 15px; max-height: 250px; overflow-y: auto;"></div>
             <button class="action-btn" style="margin-top: 20px; width: 100%;" onclick="hide('move-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="bookmarks-modal" class="overlay">
+        <div class="modal-card">
+            <h2>Saved Bookmarks</h2>
+            <div id="bookmarks-list" style="margin-top: 15px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
+            <button class="action-btn" style="margin-top: 20px; width: 100%;" onclick="hide('bookmarks-modal')">Close</button>
         </div>
     </div>
 
@@ -172,13 +197,15 @@
             </div>
             
             <div class="reader-controls">
+                <button class="edge-btn" onclick="showBookmarks()">📑 <span>Bookmarks</span></button>
+                <div style="width: 1px; height: 20px; background: #555; margin: 0 5px;"></div>
                 <div class="search-container">
-                    <input type="text" id="pdf-search-input" placeholder="Find Text...">
+                    <input type="text" id="pdf-search-input" placeholder="Search page...">
                     <button onclick="searchPDF()">🔍</button>
                 </div>
                 <div style="width: 1px; height: 20px; background: #555; margin: 0 5px;"></div>
                 
-                <button class="edge-btn active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Pan</span></button>
+                <button class="edge-btn active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Pan/Select</span></button>
                 <button class="edge-btn" id="tool-pen" onclick="setTool('pen')">🖊️ <span>Pen</span></button>
                 <button class="edge-btn" id="tool-highlight" onclick="setTool('highlight')">🖍️ <span>Highlight</span></button>
                 <button class="edge-btn" id="tool-eraser" onclick="setTool('eraser')">🧹 <span>Eraser</span></button>
@@ -191,7 +218,9 @@
         </div>
 
         <div id="viewer-viewport" class="viewer-viewport">
-            <div id="pdf-pages-container" class="pdf-pages-container"></div>
+            <div class="zoom-container" id="zoom-container">
+                <div id="pdf-pages-container" class="pdf-pages-container"></div>
+            </div>
         </div>
 
         <div class="reader-footer">
@@ -201,6 +230,8 @@
             </div>
             <div id="sync-status" style="margin-left:10px; font-size: 12px; color:#555; text-shadow: 1px 1px 2px white;">Ready</div>
         </div>
+
+        <button class="immersive-toggle" onclick="toggleImmersive()">👁️</button>
     </div>
 
     <script>
@@ -407,21 +438,30 @@
             hide('loader'); renderGrid(); e.target.value = ''; 
         });
 
-        // --- NEW READER SYSTEM (LAZY LOAD + NATIVE ZOOM) ---
+        // --- NEW READER SYSTEM (LAZY LOAD, NATIVE ZOOM, TEXT SELECTION) ---
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let pdfDoc = null, pageCount = 0, currentTool = 'pan', isDrawing = false, drawingsMap = {};
         let activeFileId = null, currentPageNum = 1;
         
-        // Native Zoom
         const viewport = document.getElementById('viewer-viewport');
+        const zoomContainer = document.getElementById('zoom-container');
         const pagesContainer = document.getElementById('pdf-pages-container');
+        
         let currentZoom = 1.0;
-        let baseContainerWidth = 800; // Calculated on open
-        let basePageRatio = 1.414; // Default A4, updated when pg 1 loads
-        let renderedPages = new Set(); // Tracks which pages have canvases
+        let baseContainerWidth = 800; 
+        let basePageRatio = 1.414; 
+        let renderedPages = new Set(); 
+        let isImmersive = false;
 
         let activeColor = '#d13438';
         function updateColor() { activeColor = document.getElementById('color-picker').value; setTool('pen'); }
+
+        function toggleImmersive() {
+            isImmersive = !isImmersive;
+            const readerView = document.getElementById('reader-view');
+            if(isImmersive) readerView.classList.add('immersive-mode');
+            else readerView.classList.remove('immersive-mode');
+        }
 
         function resumeLastBook() { if (cloudOS.last && cloudOS.last.id) openReader(cloudOS.last.id, cloudOS.last.name); }
 
@@ -441,6 +481,7 @@
                 document.getElementById('file-manager-view').style.display = 'none';
                 document.getElementById('reader-view').style.display = 'flex';
                 document.getElementById('book-title-header').innerText = fileName; 
+                setTool('pan'); // Default tool
                 
                 document.getElementById('loader-text').innerText = "Streaming Proxy...";
                 const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
@@ -461,8 +502,8 @@
                 
                 try { drawingsMap = JSON.parse(localStorage.getItem(`DRAWINGS_${activeFileId}`)) || {}; } catch(e){ drawingsMap = {}; }
                 
-                await initLazyPages(); // Creates empty placeholders
-                fetchLastPage(); // Scrolls to correct box
+                await initLazyPages(); 
+                fetchLastPage(); 
                 updateBookmarkUI(); hide('loader');
 
             } catch (err) { alert("Reader Error: " + err.message); hide('loader'); closeBook(); }
@@ -471,15 +512,15 @@
         function closeBook() {
             document.getElementById('reader-view').style.display = 'none'; document.getElementById('file-manager-view').style.display = 'flex';
             pagesContainer.innerHTML = ''; renderedPages.clear(); pdfDoc = null;
+            if(isImmersive) toggleImmersive();
             renderGrid(); 
         }
 
-        // --- 1. LAZY LOADING ENGINE (Prevents Mobile Crash) ---
+        // --- 1. LAZY LOADING & CSS ZOOM ---
         async function initLazyPages() {
             const vWidth = viewport.clientWidth;
             baseContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
 
-            // Get Ratio from Page 1 without rendering
             const page1 = await pdfDoc.getPage(1);
             const vp1 = page1.getViewport({ scale: 1.0 });
             basePageRatio = vp1.height / vp1.width;
@@ -489,80 +530,93 @@
                 wrapper.className = 'pdf-page-wrapper';
                 wrapper.id = `page-wrapper-${i}`;
                 wrapper.dataset.page = i;
-                wrapper.innerText = `Loading Page ${i}...`; // Placeholder text
+                wrapper.innerText = `Loading Page ${i}...`;
                 
-                // Set native dimensions
-                wrapper.style.width = `${baseContainerWidth * currentZoom}px`;
-                wrapper.style.height = `${(baseContainerWidth * basePageRatio) * currentZoom}px`;
+                wrapper.style.width = `${baseContainerWidth}px`;
+                wrapper.style.height = `${(baseContainerWidth * basePageRatio)}px`;
                 
                 pagesContainer.appendChild(wrapper);
                 pageObserver.observe(wrapper);
             }
         }
 
-        // Observes boxes. If box enters screen, render canvas inside it.
         const pageObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const pageNum = parseInt(entry.target.dataset.page);
-                    if (!renderedPages.has(pageNum)) {
-                        renderPageCanvas(pageNum, entry.target);
-                    }
+                    if (!renderedPages.has(pageNum)) renderPageCanvas(pageNum, entry.target);
                 }
             });
-        }, { root: viewport, rootMargin: '800px 0px' }); // Load slightly off-screen
+        }, { root: viewport, rootMargin: '800px 0px' });
 
         async function renderPageCanvas(pageNum, wrapper) {
             renderedPages.add(pageNum);
-            wrapper.innerText = ''; // Clear text
+            wrapper.innerText = ''; 
             
             const page = await pdfDoc.getPage(pageNum);
-            const dpr = window.devicePixelRatio || 1; // High-res Mobile Fix
+            const dpr = window.devicePixelRatio || 1; 
             const unscaledViewport = page.getViewport({ scale: 1.0 });
             
-            // Adjust box height if this specific page has a weird ratio
             const actualRatio = unscaledViewport.height / unscaledViewport.width;
-            wrapper.style.height = `${(baseContainerWidth * actualRatio) * currentZoom}px`;
+            wrapper.style.height = `${(baseContainerWidth * actualRatio)}px`;
 
             const cssScale = baseContainerWidth / unscaledViewport.width;
             const renderViewport = page.getViewport({ scale: cssScale * dpr });
+            const displayViewport = page.getViewport({ scale: cssScale });
 
             const pdfCanvas = document.createElement('canvas');
             pdfCanvas.className = 'pdf-page-canvas';
             pdfCanvas.width = renderViewport.width; 
             pdfCanvas.height = renderViewport.height;
-            // Native stretching
-            pdfCanvas.style.width = `100%`; pdfCanvas.style.height = `100%`;
             
+            // TEXT LAYER GENERATOR (Enables Selection & Native Search)
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'text-layer';
+            const textContent = await page.getTextContent();
+            
+            textContent.items.forEach(item => {
+                const tx = pdfjsLib.Util.transform(displayViewport.transform, item.transform);
+                const fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+                const fontAscent = fontHeight; 
+                const span = document.createElement('span');
+                span.textContent = item.str;
+                span.style.left = `${tx[4]}px`;
+                span.style.top = `${tx[5] - fontAscent}px`;
+                span.style.fontSize = `${fontHeight}px`;
+                span.style.fontFamily = item.fontName;
+                textLayerDiv.appendChild(span);
+            });
+
             const annoCanvas = document.createElement('canvas');
             annoCanvas.className = 'annotation-canvas';
             annoCanvas.width = baseContainerWidth; annoCanvas.height = baseContainerWidth * actualRatio;
-            annoCanvas.style.width = `100%`; annoCanvas.style.height = `100%`;
 
-            wrapper.appendChild(pdfCanvas); wrapper.appendChild(annoCanvas);
+            wrapper.appendChild(pdfCanvas); 
+            wrapper.appendChild(textLayerDiv);
+            wrapper.appendChild(annoCanvas);
 
             const ctx = pdfCanvas.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
             
             setupAnnotations(annoCanvas, pageNum, baseContainerWidth);
             redrawAnnotations(annoCanvas, pageNum);
+            
+            // Apply current tool rules to the newly loaded page
+            setTool(currentTool); 
         }
 
-        // --- 2. NATIVE ZOOM (Fixes Scrollbar jumping) ---
+        // --- 2. NATIVE ZOOM (Left-Align Fixed) ---
         function zoomIn() { currentZoom += 0.2; if(currentZoom > 3) currentZoom = 3; applyZoom(); }
         function zoomOut() { currentZoom -= 0.2; if(currentZoom < 0.5) currentZoom = 0.5; applyZoom(); }
-        
         function applyZoom() {
-            // Simply resize the wrappers. The DOM handles the scrollbars natively.
-            document.querySelectorAll('.pdf-page-wrapper').forEach(w => {
-                const wWidth = baseContainerWidth * currentZoom;
-                w.style.width = `${wWidth}px`;
-                // Estimate height (if canvas is rendered, use its aspect ratio, else use base)
-                const anno = w.querySelector('.annotation-canvas');
-                const ratio = anno ? (anno.height / anno.width) : basePageRatio;
-                w.style.height = `${wWidth * ratio}px`;
-            });
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+            // Maintain scroll position roughly
+            viewport.scrollBy(0,1); viewport.scrollBy(0,-1); 
         }
+
+        viewport.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.deltaY > 0 ? zoomOut() : zoomIn(); }
+        }, { passive: false });
 
         // --- SEARCH ENGINE ---
         async function searchPDF() {
@@ -575,19 +629,21 @@
                 const textString = textContent.items.map(item => item.str).join(' ').toLowerCase();
                 if(textString.includes(query)) {
                     document.getElementById('sync-status').innerText = `Found on Pg ${i}`;
-                    document.getElementById(`page-wrapper-${i}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const wrapper = document.getElementById(`page-wrapper-${i}`);
+                    if(wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                 }
             }
             document.getElementById('sync-status').innerText = "Not found.";
         }
 
-        // --- ANNOTATIONS ---
+        // --- ADVANCED ANNOTATIONS ---
         function setTool(toolName) {
             currentTool = toolName;
             document.querySelectorAll('.reader-controls .edge-btn').forEach(b => b.classList.remove('active-tool'));
             document.getElementById(`tool-${toolName}`).classList.add('active-tool');
             
+            // If Pan is selected, annotation canvas ignores pointers so you can select the text layer below it!
             const ptr = toolName === 'pan' ? 'none' : 'auto';
             document.querySelectorAll('.annotation-canvas').forEach(c => {
                 c.style.pointerEvents = ptr;
@@ -603,7 +659,6 @@
                 if (currentTool === 'pan') return;
                 isDrawing = true; 
                 const rect = canvas.getBoundingClientRect();
-                // Map screen coordinates back to base canvas resolution
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
                 const x = (clientX - rect.left) * scaleX; 
@@ -635,8 +690,14 @@
             canvas.onmousedown = (e) => startDraw(e.clientX, e.clientY);
             canvas.onmousemove = (e) => moveDraw(e.clientX, e.clientY);
             canvas.onmouseup = endDraw; canvas.onmouseleave = endDraw;
-            canvas.addEventListener('touchstart', e => { if(e.touches.length === 1) { e.preventDefault(); startDraw(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
-            canvas.addEventListener('touchmove', e => { if(e.touches.length === 1) { e.preventDefault(); moveDraw(e.touches[0].clientX, e.touches[0].clientY); }}, {passive: false});
+            
+            // Mobile Touch Logic (2 fingers = pan, 1 finger = draw)
+            canvas.addEventListener('touchstart', e => { 
+                if(e.touches.length === 1) { e.preventDefault(); startDraw(e.touches[0].clientX, e.touches[0].clientY); }
+            }, {passive: false});
+            canvas.addEventListener('touchmove', e => { 
+                if(e.touches.length === 1) { e.preventDefault(); moveDraw(e.touches[0].clientX, e.touches[0].clientY); }
+            }, {passive: false});
             canvas.addEventListener('touchend', endDraw);
         }
 
@@ -646,7 +707,7 @@
             } else if (tool === 'highlight') { 
                 ctx.globalCompositeOperation = 'multiply'; ctx.strokeStyle = color; ctx.lineWidth = 18; ctx.globalAlpha = 0.3; ctx.lineCap = 'butt'; 
             } else if (tool === 'eraser') {
-                ctx.globalCompositeOperation = 'destination-out'; ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 25; ctx.globalAlpha = 1.0; ctx.lineCap = 'round';
+                ctx.globalCompositeOperation = 'destination-out'; ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 30; ctx.globalAlpha = 1.0; ctx.lineCap = 'round';
             }
         }
 
@@ -662,11 +723,10 @@
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        // --- 3. FIXED SCROLL & BOOKMARKS ---
+        // --- 3. SCROLL, BOOKMARKS & MANAGER ---
         viewport.addEventListener('scroll', () => {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let current = 1;
-            // Find which box is in the center of the screen
             wrappers.forEach((el, idx) => {
                 const rect = el.getBoundingClientRect();
                 if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) current = idx + 1;
@@ -707,6 +767,27 @@
             const btn = document.getElementById('bookmark-btn');
             if(isBookmarked) btn.classList.add('bookmarked');
             else btn.classList.remove('bookmarked');
+        }
+
+        function showBookmarks() {
+            const list = document.getElementById('bookmarks-list');
+            list.innerHTML = '';
+            const myMarks = (cloudOS.bookmarks || []).filter(b => b.fileId === activeFileId);
+            
+            if(myMarks.length === 0) {
+                list.innerHTML = `<p style="color:#888;">No bookmarks saved for this file.</p>`;
+            } else {
+                myMarks.sort((a,b) => a.page - b.page).forEach(mark => {
+                    list.innerHTML += `<div class="folder-list-item" onclick="jumpToPage(${mark.page})">🔖 Jump to Page ${mark.page}</div>`;
+                });
+            }
+            show('bookmarks-modal');
+        }
+
+        function jumpToPage(pg) {
+            hide('bookmarks-modal');
+            const wrapper = document.getElementById(`page-wrapper-${pg}`);
+            if(wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         window.addEventListener('load', syncFromCloud);

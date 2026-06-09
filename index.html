@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shivam PDF Reader (Stateless Cloud)</title>
+    <title>Shivam PDF Reader</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -43,6 +43,7 @@
         .library-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d1d1; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .header-actions { display: flex; gap: 10px; }
         
+        /* Resume Banner */
         .resume-banner { background: #0078d4; color: white; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; cursor: pointer; display: none; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,120,212,0.3); transition: transform 0.2s; }
         .resume-banner:hover { transform: translateY(-2px); }
         .resume-text { font-size: 14px; font-weight: 600; }
@@ -58,6 +59,11 @@
         .folder-card:hover { border-color: #dcb343; }
         .book-icon { font-size: 40px; margin-bottom: 10px; }
         .book-title { font-size: 13px; font-weight: 600; word-break: break-word; color: #333; }
+        
+        /* Card Actions */
+        .move-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.05); border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; display: none; }
+        .book-card:hover .move-btn { display: block; }
+        .move-btn:hover { background: #e0e0e0; }
 
         /* Buttons */
         .action-btn { background: #e0e0e0; color: #333; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; border: none; font-size: 13px; transition: background 0.2s; }
@@ -92,7 +98,12 @@
         .progress-container { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; margin-top: 15px; overflow: hidden; display: none; }
         .progress-bar { width: 0%; height: 100%; background: #0078d4; transition: width 0.2s ease-in-out; }
 
-        #loader { display: none; }
+        .folder-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; text-align: left; font-size: 14px; }
+        .folder-list-item:hover { background: #f0f0f0; }
+
+        #loader, #move-modal, #sync-modal { display: none; }
+
+        textarea.sync-box { width: 100%; height: 80px; margin: 15px 0; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; }
 
         @media (max-width: 600px) {
             .center-controls { display: none; }
@@ -112,11 +123,31 @@
             </div>
         </div>
     </div>
+
+    <div id="move-modal" class="overlay">
+        <div class="modal-card">
+            <h2>Move to Folder</h2>
+            <div id="folder-list" style="margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+            <button class="action-btn" style="margin-top: 15px; width: 100%;" onclick="hide('move-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="sync-modal" class="overlay">
+        <div class="modal-card">
+            <h2>🔗 Link Incognito / Device</h2>
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">Copy this code from your main browser, and paste it into your Incognito tab to instantly sync your library.</p>
+            <textarea id="sync-data-box" class="sync-box" placeholder="Paste your sync code here..."></textarea>
+            <div style="display: flex; gap: 10px;">
+                <button class="action-btn" style="flex: 1; background: #0078d4; color: white;" onclick="applySyncCode()">Load Code</button>
+                <button class="action-btn" style="flex: 1;" onclick="hide('sync-modal')">Close</button>
+            </div>
+        </div>
+    </div>
     
     <div id="library-view">
         <div class="edge-toolbar" style="position: absolute;">
             <div class="left-group"><span class="app-logo">📚</span><h2 id="library-title">Shivam PDF Reader</h2></div>
-            <div class="right-group"><span class="status-tracker">Live Telegram Sync</span></div>
+            <div class="right-group"><span class="status-tracker">Portable Database OS</span></div>
         </div>
 
         <div class="resume-banner" id="resume-banner" onclick="resumeLastBook()">
@@ -128,6 +159,8 @@
             <h1 id="view-heading" style="font-size: 20px; font-weight: 400; margin: 0; color: #2b2b2b;">My Drive</h1>
             <div class="header-actions">
                 <button class="action-btn" id="back-btn" style="display: none;" onclick="openFolder(null)">🔙 Back</button>
+                <button class="action-btn" onclick="openSyncModal()">🔗 Link Device</button>
+                <button class="action-btn" onclick="createNewFolder()">📁 New Folder</button>
                 <div class="upload-btn-container">
                     <button class="action-btn upload-btn">➕ Upload PDF</button>
                     <input type="file" id="pdf-upload" accept="application/pdf">
@@ -163,23 +196,28 @@
     </div>
 
     <script>
-        // --- INCOGNITO-SAFE AUTH ---
-        let TELEGRAM_BOT_TOKEN = sessionStorage.getItem('MY_BOT_TOKEN') || localStorage.getItem('MY_BOT_TOKEN');
-        let TELEGRAM_CHAT_ID = sessionStorage.getItem('MY_CHAT_ID') || localStorage.getItem('MY_CHAT_ID');
+        // --- AUTH & DATA STRUCTURE ---
+        let TELEGRAM_BOT_TOKEN = localStorage.getItem('MY_BOT_TOKEN');
+        let TELEGRAM_CHAT_ID = localStorage.getItem('MY_CHAT_ID');
 
         if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
             TELEGRAM_BOT_TOKEN = prompt("Enter your Telegram Bot Token:");
             TELEGRAM_CHAT_ID = prompt("Enter your Telegram Chat ID:");
-            // Save to sessionStorage so it persists during this Incognito tab's life
-            sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
-            sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
-            try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
+            localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
+            localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
         }
 
-        // --- STATELESS CLOUD DB ---
-        // Everything is built dynamically from the Telegram chat history. No local caching.
-        let cloudDB = { books: [], folders: new Set(), lastReadId: null, lastReadName: null, lastReadPage: 1 };
+        // The Permanent Local Database
+        let cloudOS = JSON.parse(localStorage.getItem('CLOUD_OS_DB'));
+        if (!cloudOS || Array.isArray(cloudOS)) {
+            cloudOS = { folders: {}, books: [], lastReadId: null, lastReadName: null, lastReadPage: 1 };
+            saveDB();
+        }
+
         let currentFolderView = null; 
+        let movingBookId = null; 
+
+        function saveDB() { localStorage.setItem('CLOUD_OS_DB', JSON.stringify(cloudOS)); }
 
         // --- UI HELPERS ---
         const show = (id) => document.getElementById(id).style.display = 'flex';
@@ -193,76 +231,38 @@
             bar.style.width = percent + '%';
         }
 
-        // --- THE STATELESS LIBRARY SYNC ---
-        async function loadLibrary() {
-            show('loader'); document.getElementById('loader-text').innerText = "Fetching Cloud State..."; setProgress(-1);
-            
-            try {
-                // Fetch the last 100 messages from the bot to build the database from scratch
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?limit=100`;
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                cloudDB.books = [];
-                cloudDB.folders.clear();
-                cloudDB.lastReadId = null;
-
-                let syncMessages = [];
-
-                for (let i = data.result.length - 1; i >= 0; i--) {
-                    const msg = data.result[i].message || data.result[i].channel_post;
-                    
-                    // 1. Find Sync Data (Bookmarks)
-                    if (msg && msg.text && msg.text.includes('[EDGE_SYNC]')) {
-                        syncMessages.push(msg.text);
-                    }
-                    
-                    // 2. Find Books and Folders
-                    if (msg && msg.document && msg.document.mime_type === 'application/pdf') {
-                        if (!cloudDB.books.find(b => b.id === msg.document.file_id)) {
-                            // Extract folder from Telegram Caption (e.g., "#folder_Math")
-                            let folderName = null;
-                            if (msg.caption && msg.caption.includes('#folder_')) {
-                                folderName = msg.caption.split('#folder_')[1].split(' ')[0].replace(/_/g, ' ');
-                                cloudDB.folders.add(folderName);
-                            }
-
-                            cloudDB.books.push({
-                                id: msg.document.file_id,
-                                name: msg.document.file_name || "Document.pdf",
-                                size: (msg.document.file_size / 1024 / 1024).toFixed(2) + " MB",
-                                folder: folderName
-                            });
-                        }
-                    }
-                }
-
-                // Parse the most recent Sync Message for the Resume Banner
-                if (syncMessages.length > 0) {
-                    const latestSync = syncMessages[0];
-                    const idMatch = latestSync.match(/File: (.*?) \|/);
-                    const pageMatch = latestSync.match(/Page: (\d+)/);
-                    if (idMatch && pageMatch) {
-                        cloudDB.lastReadId = idMatch[1];
-                        cloudDB.lastReadPage = parseInt(pageMatch[1], 10);
-                        const foundBook = cloudDB.books.find(b => b.id === cloudDB.lastReadId);
-                        if (foundBook) cloudDB.lastReadName = foundBook.name;
-                    }
-                }
-
-            } catch (err) { alert("Network Error: Could not reach Telegram to build Library."); }
-
-            renderGrid();
-            hide('loader');
+        // --- INCOGNITO SYNC ENGINE ---
+        function openSyncModal() {
+            // Generate base64 code of current database to share with Incognito tab
+            const syncCode = btoa(JSON.stringify(cloudOS));
+            document.getElementById('sync-data-box').value = syncCode;
+            show('sync-modal');
         }
 
+        function applySyncCode() {
+            const input = document.getElementById('sync-data-box').value;
+            try {
+                const parsedData = JSON.parse(atob(input));
+                if (parsedData.books) {
+                    cloudOS = parsedData;
+                    saveDB();
+                    hide('sync-modal');
+                    renderGrid();
+                    alert("Library Sync Successful!");
+                }
+            } catch (e) {
+                alert("Invalid Sync Code. Please copy it exactly from your main browser.");
+            }
+        }
+
+        // --- LIBRARY RENDERER ---
         function renderGrid() {
             const grid = document.getElementById('book-grid');
             grid.innerHTML = '';
 
-            // Resume Banner Logic
-            if (cloudDB.lastReadId && cloudDB.lastReadName && !currentFolderView) {
-                document.getElementById('resume-title').innerText = `${cloudDB.lastReadName} (Pg ${cloudDB.lastReadPage})`;
+            // Render Resume Banner
+            if (cloudOS.lastReadId && cloudOS.lastReadName && !currentFolderView) {
+                document.getElementById('resume-title').innerText = `${cloudOS.lastReadName} (Pg ${cloudOS.lastReadPage})`;
                 document.getElementById('resume-banner').style.display = 'flex';
             } else {
                 document.getElementById('resume-banner').style.display = 'none';
@@ -272,24 +272,22 @@
                 document.getElementById('view-heading').innerText = "My Drive";
                 document.getElementById('back-btn').style.display = 'none';
 
-                // Render Folders
-                cloudDB.folders.forEach(fName => {
+                for (const [fId, fName] of Object.entries(cloudOS.folders)) {
                     const card = document.createElement('div');
                     card.className = 'book-card folder-card';
                     card.innerHTML = `<div class="book-icon">📁</div><div class="book-title">${fName}</div>`;
-                    card.onclick = () => openFolder(fName);
+                    card.onclick = () => openFolder(fId);
                     grid.appendChild(card);
-                });
+                }
 
-                // Render Root Books
-                const rootBooks = cloudDB.books.filter(b => !b.folder);
+                const rootBooks = cloudOS.books.filter(b => !b.folderId);
                 [...rootBooks].reverse().forEach(book => createBookCard(book, grid));
 
             } else {
-                document.getElementById('view-heading').innerText = "📁 " + currentFolderView;
+                document.getElementById('view-heading').innerText = "📁 " + cloudOS.folders[currentFolderView];
                 document.getElementById('back-btn').style.display = 'inline-block';
 
-                const folderBooks = cloudDB.books.filter(b => b.folder === currentFolderView);
+                const folderBooks = cloudOS.books.filter(b => b.folderId === currentFolderView);
                 if (folderBooks.length === 0) grid.innerHTML = `<p style="grid-column: 1/-1; color:#888;">Folder is empty.</p>`;
                 [...folderBooks].reverse().forEach(book => createBookCard(book, grid));
             }
@@ -299,27 +297,60 @@
             const card = document.createElement('div');
             card.className = 'book-card';
             card.innerHTML = `
+                <button class="move-btn" title="Move to Folder">⮀ Move</button>
                 <div class="book-icon">📄</div>
                 <div class="book-title">${book.name}</div>
                 <div style="font-size:11px; color:#888; margin-top:8px;">${book.size}</div>
             `;
+            
+            card.querySelector('.move-btn').onclick = (e) => {
+                e.stopPropagation();
+                openMoveModal(book.id);
+            };
+            
             card.onclick = () => openReader(book.id, book.name);
             grid.appendChild(card);
         }
 
-        function openFolder(fName) {
-            currentFolderView = fName;
+        // --- FOLDER MANAGEMENT ---
+        function createNewFolder() {
+            const name = prompt("Enter folder name:");
+            if (!name) return;
+            const fId = 'folder_' + Date.now();
+            cloudOS.folders[fId] = name;
+            saveDB();
             renderGrid();
         }
 
-        // --- UPLOADER ---
+        function openFolder(fId) {
+            currentFolderView = fId;
+            renderGrid();
+        }
+
+        function openMoveModal(bookId) {
+            movingBookId = bookId;
+            const list = document.getElementById('folder-list');
+            list.innerHTML = `<div class="folder-list-item" onclick="moveTo(null)">🏠 Root Drive</div>`;
+            
+            for (const [fId, fName] of Object.entries(cloudOS.folders)) {
+                list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${fId}')">📁 ${fName}</div>`;
+            }
+            show('move-modal');
+        }
+
+        function moveTo(fId) {
+            const book = cloudOS.books.find(b => b.id === movingBookId);
+            if (book) book.folderId = fId;
+            saveDB();
+            hide('move-modal');
+            renderGrid();
+        }
+
+        // --- THE FIXED UPLOADER ---
+        // We now explicitly grab the file ID from Telegram's receipt and push it directly into our database.
         document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            // Ask if they want to put it in a folder
-            let targetFolder = prompt("Enter a folder name for this PDF, or leave blank to save to Root Drive:");
-            let captionText = targetFolder ? `#folder_${targetFolder.replace(/ /g, '_')}` : "Root Upload";
             
             const CHUNK_LIMIT = 18 * 1024 * 1024; 
 
@@ -329,11 +360,23 @@
                     const formData = new FormData();
                     formData.append('chat_id', TELEGRAM_CHAT_ID);
                     formData.append('document', file);
-                    formData.append('caption', captionText);
                     
-                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+                    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    
+                    if (data.ok && data.result && data.result.document) {
+                        cloudOS.books.push({ 
+                            id: data.result.document.file_id, 
+                            name: file.name, 
+                            size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
+                            folderId: currentFolderView 
+                        });
+                        saveDB();
+                    } else {
+                        throw new Error("Telegram Server Rejected File.");
+                    }
                 } else {
-                    show('loader'); document.getElementById('loader-text').innerText = `Slicing Huge File...`; setProgress(-1);
+                    show('loader'); document.getElementById('loader-text').innerText = `Preparing to Slice Huge File...`; setProgress(-1);
                     await new Promise(r => setTimeout(r, 100));
                     
                     const numChunks = Math.ceil(file.size / CHUNK_LIMIT);
@@ -342,12 +385,12 @@
                     const totalPages = rawPdf.getPageCount();
                     const pagesPerChunk = Math.ceil(totalPages / numChunks);
 
-                    // Force sliced books into an auto-folder using the caption method
-                    let sliceCaption = `#folder_${file.name.replace('.pdf', '').replace(/ /g, '_')}_Parts`;
+                    const autoFolderId = 'folder_' + Date.now();
+                    cloudOS.folders[autoFolderId] = file.name.replace('.pdf', '') + " (Parts)";
                     
                     for (let i = 0; i < numChunks; i++) {
                         document.getElementById('loader-text').innerText = `Slicing Volume ${i+1} of ${numChunks}...`;
-                        await new Promise(r => setTimeout(r, 50)); 
+                        setProgress(-1); await new Promise(r => setTimeout(r, 50)); 
 
                         const newDoc = await PDFLib.PDFDocument.create();
                         const start = i * pagesPerChunk;
@@ -362,11 +405,22 @@
                         
                         const formData = new FormData();
                         formData.append('chat_id', TELEGRAM_CHAT_ID);
-                        formData.append('document', blob, `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`);
-                        formData.append('caption', sliceCaption);
+                        const volName = `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`;
+                        formData.append('document', blob, volName);
                         
                         document.getElementById('loader-text').innerText = `Uploading Volume ${i+1}...`;
-                        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+                        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
+                        const data = await res.json();
+                        
+                        if (data.ok && data.result && data.result.document) {
+                            cloudOS.books.push({ 
+                                id: data.result.document.file_id, 
+                                name: volName, 
+                                size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
+                                folderId: autoFolderId 
+                            });
+                            saveDB();
+                        }
                     }
                 }
             } catch (err) {
@@ -375,7 +429,7 @@
             }
             
             hide('loader');
-            loadLibrary(); // Re-sync the OS to fetch the new files
+            renderGrid();
             e.target.value = ''; 
         });
 
@@ -387,14 +441,18 @@
         let activeFileId = null;
 
         function resumeLastBook() {
-            if (cloudDB.lastReadId && cloudDB.lastReadName) {
-                openReader(cloudDB.lastReadId, cloudDB.lastReadName);
+            if (cloudOS.lastReadId && cloudOS.lastReadName) {
+                openReader(cloudOS.lastReadId, cloudOS.lastReadName);
             }
         }
 
         async function openReader(file_id, fileName) {
             show('loader'); document.getElementById('loader-text').innerText = "Requesting Access..."; setProgress(0);
             activeFileId = file_id;
+            
+            cloudOS.lastReadId = file_id;
+            cloudOS.lastReadName = fileName;
+            saveDB();
             
             try {
                 // 1. Get Path from Telegram
@@ -409,8 +467,7 @@
                 document.getElementById('reader-view').style.display = 'block';
                 document.getElementById('book-title').innerText = fileName;
                 
-                // 2. Aggressive Streaming Router (No Download Fallbacks)
-                // We use high-throughput proxies designed specifically to bypass CORS without size limits.
+                // 2. The Resilient Proxy Router
                 const proxies = [
                     `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
                     `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`,
@@ -422,8 +479,6 @@
                 for (let i = 0; i < proxies.length; i++) {
                     try {
                         document.getElementById('loader-text').innerText = `Opening Secure Tunnel (${i+1}/3)...`;
-                        
-                        // We fetch the arrayBuffer directly. No stream readers, so proxies don't panic.
                         const res = await fetch(proxies[i]);
                         if (!res.ok) continue;
                         
@@ -436,12 +491,12 @@
                     }
                 }
 
-                if (!pdfBytes) throw new Error("All secure tunnels blocked by browser security. You must build a custom Cloudflare worker to read this file.");
+                if (!pdfBytes) throw new Error("All secure tunnels blocked by network. Try turning off your adblocker or VPN temporarily.");
 
                 document.getElementById('loader-text').innerText = "Rendering PDF...";
                 setProgress(-1);
 
-                // Feed raw data directly to PDF.js
+                // Feed raw data directly into PDF.js
                 const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
                 pdfDoc = await loadingTask.promise;
                 
@@ -465,7 +520,7 @@
             document.getElementById('library-view').style.display = 'block';
             pagesContainer.innerHTML = '';
             drawingsMap = {};
-            loadLibrary(); // Resync library to update the Resume Banner
+            renderGrid(); 
         }
 
         viewport.addEventListener('wheel', (e) => {
@@ -556,7 +611,7 @@
             });
         }
 
-        // --- STATELESS BOOKMARKS ---
+        // --- DATABASE-AWARE BOOKMARKS ---
         viewport.addEventListener('scroll', () => {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let current = 1;
@@ -568,28 +623,18 @@
             
             clearTimeout(window.syncTimeout);
             window.syncTimeout = setTimeout(() => {
-                document.getElementById('sync-status').innerText = "☁️ Saving to Cloud...";
-                
-                // Write progress to the live Telegram chat history
-                const messageText = encodeURIComponent(`[EDGE_SYNC] File: ${activeFileId} | Page: ${current}`);
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${messageText}&disable_notification=true`;
-                
-                const imgPing = new Image();
-                imgPing.onload = () => { document.getElementById('sync-status').innerText = "✅ Synced"; };
-                imgPing.onerror = () => { document.getElementById('sync-status').innerText = "✅ Synced"; };
-                imgPing.src = url;
-            }, 1000); // 1 second debounce
+                cloudOS.lastReadPage = current;
+                saveDB();
+                document.getElementById('sync-status').innerText = "✅ Saved locally";
+            }, 500);
         });
 
         function fetchLastPage() {
-            document.getElementById('sync-status').innerText = "📡 Fetching Progress...";
-            
-            // If the library sync already found the last read page for this book, jump to it
-            if (cloudDB.lastReadId === activeFileId && cloudDB.lastReadPage) {
-                document.getElementById('sync-status').innerText = `🔄 Restored Pg ${cloudDB.lastReadPage}`;
+            if (cloudOS.lastReadId === activeFileId && cloudOS.lastReadPage) {
+                document.getElementById('sync-status').innerText = `🔄 Restored Pg ${cloudOS.lastReadPage}`;
                 setTimeout(() => {
                     const wrappers = document.querySelectorAll('.pdf-page-wrapper');
-                    if (wrappers[cloudDB.lastReadPage - 1]) wrappers[cloudDB.lastReadPage - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    if (wrappers[cloudOS.lastReadPage - 1]) wrappers[cloudOS.lastReadPage - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 800);
             } else {
                 document.getElementById('sync-status').innerText = "ℹ️ Ready";
@@ -597,7 +642,7 @@
         }
 
         // Boot
-        window.addEventListener('load', loadLibrary);
+        window.addEventListener('load', renderGrid);
     </script>
 </body>
 </html>

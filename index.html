@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shivam Cloud OS</title>
+    <title>Shivam PDF Reader</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -28,7 +28,7 @@
         .primary-btn { background: var(--primary); color: white; border: none; }
         .primary-btn:hover { background: #106ebe; }
 
-        /* --- FILE MANAGER PAGE (NEW) --- */
+        /* --- FILE MANAGER PAGE --- */
         #file-manager-view { display: flex; width: 100%; height: 100%; }
         
         .fm-sidebar { width: 250px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.1); z-index: 10; }
@@ -40,47 +40,48 @@
 
         .fm-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; border-top-left-radius: 12px; margin-top: 10px; box-shadow: -2px -2px 10px rgba(0,0,0,0.05); }
         
-        .fm-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid var(--border-color); background: #fff; z-index: 5; }
-        .breadcrumbs { font-size: 20px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: center; }
+        .fm-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid var(--border-color); background: #fff; z-index: 5; flex-wrap: wrap; gap: 15px; }
+        .breadcrumbs { font-size: 20px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .crumb-link { cursor: pointer; color: var(--text-dark); transition: color 0.2s; }
         .crumb-link:hover { color: var(--primary); }
         .crumb-sep { color: #ccc; font-size: 16px; font-weight: 400; }
-        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
         .fm-content-area { flex: 1; overflow-y: auto; padding: 30px; background: #fafafa; }
         
-        /* Upload Container */
         .upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .upload-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
 
-        /* Banner */
         .resume-banner { background: linear-gradient(135deg, #0078d4, #005a9e); color: white; padding: 15px 24px; border-radius: 8px; margin-bottom: 30px; cursor: pointer; display: none; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,120,212,0.3); transition: transform 0.2s; }
         .resume-banner:hover { transform: translateY(-2px); }
 
-        /* Grid */
+        /* Advanced Grid & Cards */
         .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .book-card { background: #fff; border-radius: 8px; padding: 25px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .book-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
         .book-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.08); border-color: var(--primary); transform: translateY(-4px); }
         
         .folder-card { background: #fdfaf2; border-color: #e5d8b3; }
         .folder-card:hover { border-color: #dcb343; }
         
+        .card-body { padding: 25px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .book-icon { font-size: 48px; margin-bottom: 12px; }
         .book-title { font-size: 14px; font-weight: 600; word-break: break-word; line-height: 1.3; }
         .book-meta { font-size: 11px; color: #888; margin-top: 8px; }
 
-        /* Card Hover Actions */
-        .card-actions { position: absolute; top: 10px; right: 10px; display: none; gap: 5px; }
-        .book-card:hover .card-actions { display: flex; }
-        .icon-btn { background: #f0f0f0; border: none; border-radius: 4px; padding: 6px; font-size: 12px; cursor: pointer; color: #555; transition: all 0.2s; }
-        .icon-btn:hover { background: #e0e0e0; color: #000; }
-        .icon-btn.del:hover { background: #d13438; color: white; }
+        /* Permanent Action Bar */
+        .card-footer { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid #eee; background: #fafafa; }
+        .folder-card .card-footer { background: #f9f5ea; border-top-color: #e5d8b3; }
+        .card-footer button { flex: 1; padding: 10px 0; background: transparent; border: none; cursor: pointer; color: #555; font-size: 14px; transition: background 0.2s; border-right: 1px solid #eee; }
+        .card-footer button:last-child { border-right: none; }
+        .card-footer button:hover { background: rgba(0,0,0,0.05); }
+        .card-footer button.del:hover { color: #d13438; background: rgba(209,52,56,0.1); }
 
         /* --- READER PAGE --- */
         #reader-view { display: none; width: 100%; height: 100%; flex-direction: column; }
-        .reader-toolbar { width: 100%; height: 50px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; flex-shrink: 0; }
+        .reader-toolbar { width: 100%; height: 50px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; flex-shrink: 0; }
         .reader-controls { display: flex; gap: 5px; }
         .active-tool { background-color: rgba(255, 255, 255, 0.2); border-bottom: 2px solid var(--primary); }
+        #book-title-header { margin: 0; font-size: 14px; font-weight: 400; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .viewer-viewport { flex: 1; overflow-y: auto; overflow-x: auto; padding: 30px 0 80px 0; background: #e5e5e5; }
         .pdf-pages-container { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
@@ -107,11 +108,10 @@
             #file-manager-view { flex-direction: column; }
             .fm-sidebar { width: 100%; height: auto; padding: 10px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid #444; }
             .fm-logo { border: none; padding: 0; margin: 0; }
-            .fm-nav-item { display: none; }
-            .fm-status { display: none; }
+            .fm-nav-item, .fm-status { display: none; }
             .fm-main { border-radius: 0; margin-top: 0; }
             .reader-controls span { display: none; }
-            .card-actions { display: flex; }
+            #book-title-header { display: none; }
         }
     </style>
 </head>
@@ -138,7 +138,7 @@
         
         <div class="fm-sidebar">
             <div class="fm-logo">
-                <span style="font-size: 24px;">📚</span> Shivam OS
+                <span style="font-size: 24px;">📚</span> Shivam PDF Reader
             </div>
             <div class="fm-nav-item active" onclick="openFolder('root')">
                 <span>🏠</span> My Drive
@@ -173,17 +173,16 @@
                     <span style="font-weight: bold;">Jump in ➜</span>
                 </div>
 
-                <div class="book-grid" id="book-grid">
-                    </div>
+                <div class="book-grid" id="book-grid"></div>
             </div>
         </div>
     </div>
 
     <div id="reader-view">
         <div class="reader-toolbar">
-            <div class="left-group">
+            <div class="left-group" style="display: flex; align-items: center; gap: 15px;">
                 <button class="edge-btn" onclick="closeBook()">🔙 Exit Reader</button>
-            </div>
+                <h2 id="book-title-header">Document</h2> </div>
             <div class="reader-controls">
                 <button class="edge-btn active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Pan</span></button>
                 <button class="edge-btn" id="tool-pen" onclick="setTool('pen')">🖊️ <span>Pen</span></button>
@@ -264,7 +263,7 @@
                     document.getElementById('cloud-status').innerText = "✅ Cloud Sync Active";
                 }
             } catch (err) {
-                console.warn("Could not fetch cloud state, using empty state.");
+                console.warn("Could not fetch cloud state.");
                 document.getElementById('cloud-status').innerText = "⚠️ Offline Mode";
             }
             renderGrid();
@@ -323,13 +322,15 @@
                 const card = document.createElement('div');
                 card.className = 'book-card folder-card';
                 card.innerHTML = `
-                    <div class="card-actions">
-                        <button class="icon-btn del" title="Delete Folder" onclick="event.stopPropagation(); deleteFolder('${folder.id}')">🗑️</button>
+                    <div class="card-body" onclick="openFolder('${folder.id}')">
+                        <div class="book-icon">📁</div>
+                        <div class="book-title">${folder.name}</div>
                     </div>
-                    <div class="book-icon">📁</div>
-                    <div class="book-title">${folder.name}</div>
+                    <div class="card-footer" onclick="event.stopPropagation()">
+                        <button title="Rename Folder" onclick="renameFolder('${folder.id}')">✏️</button>
+                        <button title="Delete Folder" class="del" onclick="deleteFolder('${folder.id}')">🗑️</button>
+                    </div>
                 `;
-                card.onclick = () => openFolder(folder.id);
                 grid.appendChild(card);
             });
 
@@ -338,15 +339,17 @@
                 const card = document.createElement('div');
                 card.className = 'book-card';
                 card.innerHTML = `
-                    <div class="card-actions">
-                        <button class="icon-btn" title="Move File" onclick="event.stopPropagation(); openMoveModal('${file.id}')">⮀</button>
-                        <button class="icon-btn del" title="Delete File" onclick="event.stopPropagation(); deleteFile('${file.id}')">🗑️</button>
+                    <div class="card-body" onclick="openReader('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
+                        <div class="book-icon">📄</div>
+                        <div class="book-title">${file.name}</div>
+                        <div class="book-meta">${file.size}</div>
                     </div>
-                    <div class="book-icon">📄</div>
-                    <div class="book-title">${file.name}</div>
-                    <div class="book-meta">${file.size}</div>
+                    <div class="card-footer" onclick="event.stopPropagation()">
+                        <button title="Rename File" onclick="renameFile('${file.id}')">✏️</button>
+                        <button title="Move File" onclick="openMoveModal('${file.id}')">⮀</button>
+                        <button title="Delete File" class="del" onclick="deleteFile('${file.id}')">🗑️</button>
+                    </div>
                 `;
-                card.onclick = () => openReader(file.id, file.name);
                 grid.appendChild(card);
             });
         }
@@ -357,7 +360,29 @@
             renderGrid();
         }
 
-        // --- DELETE OPERATIONS ---
+        // --- ADVANCED FILE MANAGER OPERATIONS ---
+        function renameFile(id) {
+            const file = cloudOS.files.find(f => f.id === id);
+            if (!file) return;
+            const newName = prompt("Enter new file name:", file.name);
+            if (newName && newName.trim() !== "") {
+                file.name = newName.trim();
+                syncToCloud();
+                renderGrid();
+            }
+        }
+
+        function renameFolder(id) {
+            const folder = cloudOS.folders.find(f => f.id === id);
+            if (!folder) return;
+            const newName = prompt("Enter new folder name:", folder.name);
+            if (newName && newName.trim() !== "") {
+                folder.name = newName.trim();
+                syncToCloud();
+                renderGrid();
+            }
+        }
+
         function deleteFile(fileId) {
             if(!confirm("Permanently delete this file?")) return;
             cloudOS.files = cloudOS.files.filter(f => f.id !== fileId);
@@ -393,13 +418,11 @@
             renderGrid();
         }
 
-        // --- MOVE SYSTEM ---
         function openMoveModal(bookId) {
             movingBookId = bookId;
             const list = document.getElementById('folder-list');
             list.innerHTML = `<div class="folder-list-item" onclick="moveTo('root')">🏠 My Drive (Root)</div>`;
             
-            // Show all folders across the OS for easy moving
             cloudOS.folders.forEach(f => {
                 list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${f.id}')">📁 ${f.name}</div>`;
             });
@@ -432,11 +455,16 @@
                     const data = await res.json();
                     
                     if (data.ok && data.result && data.result.document) {
-                        cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId });
+                        cloudOS.files.push({ 
+                            id: data.result.document.file_id, 
+                            name: file.name, 
+                            size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
+                            parentId: currentParentId 
+                        });
                         await syncToCloud();
                     }
                 } else {
-                    show('loader'); document.getElementById('loader-text').innerText = `Slicing Huge File...`; setProgress(-1);
+                    show('loader'); document.getElementById('loader-text').innerText = `Preparing to Slice Huge File...`; setProgress(-1);
                     await new Promise(r => setTimeout(r, 100));
                     
                     const numChunks = Math.ceil(file.size / CHUNK_LIMIT);
@@ -449,7 +477,7 @@
                     cloudOS.folders.push({ id: autoFolderId, name: file.name.replace('.pdf', '') + " (Parts)", parentId: currentParentId });
                     
                     for (let i = 0; i < numChunks; i++) {
-                        document.getElementById('loader-text').innerText = `Uploading Volume ${i+1}/${numChunks}...`;
+                        document.getElementById('loader-text').innerText = `Slicing Volume ${i+1} of ${numChunks}...`;
                         await new Promise(r => setTimeout(r, 50)); 
 
                         const newDoc = await PDFLib.PDFDocument.create();
@@ -468,11 +496,17 @@
                         const volName = `${file.name.replace('.pdf', '')} - Vol ${i+1}.pdf`;
                         formData.append('document', blob, volName);
                         
+                        document.getElementById('loader-text').innerText = `Uploading Volume ${i+1}...`;
                         const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, { method: 'POST', body: formData });
                         const data = await res.json();
                         
                         if (data.ok && data.result && data.result.document) {
-                            cloudOS.files.push({ id: data.result.document.file_id, name: volName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolderId });
+                            cloudOS.files.push({ 
+                                id: data.result.document.file_id, 
+                                name: volName, 
+                                size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
+                                parentId: autoFolderId 
+                            });
                         }
                     }
                     await syncToCloud();
@@ -505,7 +539,6 @@
             syncToCloud(); 
             
             try {
-                // 1. Get Telegram Path
                 const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${file_id}`);
                 const pathData = await pathRes.json();
                 if (!pathData.ok) throw new Error("Telegram API rejected file access.");
@@ -514,12 +547,11 @@
                 
                 document.getElementById('file-manager-view').style.display = 'none';
                 document.getElementById('reader-view').style.display = 'flex';
-                document.getElementById('book-title').innerText = fileName;
+                document.getElementById('book-title-header').innerText = fileName; // BUG FIXED HERE
                 
-                // 2. 🔥 YOUR PERSONAL CLOUDFLARE WORKER ROUTE 🔥
+                // 🔥 THE CLOUDFLARE WORKER ROUTE 🔥
                 document.getElementById('loader-text').innerText = "Streaming via Custom Proxy...";
                 
-                // Uses the user's specific worker to bypass CORS 100% of the time
                 const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
 
                 const res = await fetch(proxyUrl);
@@ -660,13 +692,13 @@
             window.syncTimeout = setTimeout(() => {
                 if(cloudOS.last) cloudOS.last.page = current;
                 syncToCloud(); 
-                document.getElementById('sync-status').innerText = "☁️ Synced";
-            }, 1500); // 1.5s debounce to prevent spamming Telegram API
+                document.getElementById('sync-status').innerText = "☁️ Synced to DB";
+            }, 1000);
         });
 
         function fetchLastPage() {
             if (cloudOS.last && cloudOS.last.id === activeFileId && cloudOS.last.page) {
-                document.getElementById('sync-status').innerText = `🔄 Pg ${cloudOS.last.page}`;
+                document.getElementById('sync-status').innerText = `🔄 Restored Pg ${cloudOS.last.page}`;
                 setTimeout(() => {
                     const wrappers = document.querySelectorAll('.pdf-page-wrapper');
                     if (wrappers[cloudOS.last.page - 1]) wrappers[cloudOS.last.page - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -676,7 +708,7 @@
             }
         }
 
-        // Boot the OS
+        // Boot
         window.addEventListener('load', syncFromCloud);
     </script>
 </body>

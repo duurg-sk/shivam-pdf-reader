@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en)
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -237,7 +237,7 @@
 
             <div id="panel-create" class="form-panel">
                 <div style="background: rgba(0,120,212,0.1); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size:12px; color:#93c5fd; line-height:1.4;">
-                    <strong>Notice:</strong> Cloud profile generation is completely optional. Provide your personal infrastructure endpoints below to build an instant local workspace workspace.
+                    <strong>Notice:</strong> Cloud profile generation is completely optional. Provide your personal infrastructure endpoints below to build an instant local workspace.
                 </div>
                 <div class="form-label">Telegram Bot Token <span style="color:#ef4444;">*</span></div>
                 <input type="text" id="create-bot-token" class="auth-field" placeholder="Enter Token (e.g. 123456:ABC...)">
@@ -328,7 +328,7 @@
                         <div class="settings-card">
                             <h3 style="margin-top:0; margin-bottom:20px; font-size:18px;">Identity Providers & Security Upgrades</h3>
                             <p style="font-size:13px; color:var(--text-muted); margin-bottom:24px; line-height:1.4;">
-                                Secure your local storage drive workspace by binding this temporary session parameters to a permanent ecosystem account. This locks your libraries across multiple devices securely.
+                                Secure your local storage drive workspace by binding these temporary session parameters to a permanent ecosystem account. This locks your libraries across multiple devices securely.
                             </p>
 
                             <div class="settings-row">
@@ -379,7 +379,7 @@
                 <button class="btn-edge-dark" onclick="showBookmarks()">📑 <span>Bookmarks</span></button>
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
                 <div class="search-container">
-                    <input type="text" id="pdf-search-input" placeholder="Search text...">
+                    <input type="text" id="pdf-search-input" placeholder="Search text..." style="padding:8px; border-radius:4px; border:none; outline:none; background:rgba(255,255,255,0.1); color:#fff; width:120px;">
                 </div>
                 <button class="btn-edge-dark" onclick="searchPDF()">🔍 Scan</button>
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
@@ -390,26 +390,26 @@
         </div>
 
         <div id="viewport-canvas-container" class="viewport-canvas-container">
-            <div class="zoom-container" id="zoom-container">
-                <div id="pdf-pages-container" class="pdf-pages-container"></div>
+            <div class="zoom-scaler-node" id="zoom-container">
+                <div id="pdf-pages-container" class="continuous-pages-stack"></div>
             </div>
         </div>
 
         <div class="reader-floating-footer">
-            <button class="bookmark-btn" id="bookmark-btn" onclick="toggleBookmark()" title="Bookmark Page">🔖</button>
-            <div class="edge-page-pill">
+            <button class="circular-floating-btn" id="bookmark-btn" onclick="toggleBookmark()" title="Bookmark Page">🔖</button>
+            <div class="page-pill-badge">
                 Page <span id="page-number">1</span> / <span id="page-count">?</span>
             </div>
             <div id="sync-status" style="margin-left:10px; font-size: 12px; color:#fff; display:none;">Ready</div>
         </div>
 
-        <button class="immersive-toggle" onclick="toggleImmersive()">👁️</button>
+        <button class="immersive-vision-switch" onclick="toggleImmersive()">👁️</button>
     </div>
 
     <script>
         // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
+            apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cd0bsgTpybE",
             authDomain: "shivam-pdf-reader.firebaseapp.com",
             projectId: "shivam-pdf-reader",
             storageBucket: "shivam-pdf-reader.firebasestorage.app",
@@ -496,8 +496,10 @@
             sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
             try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
 
-            firebase.auth().signInAnonymously().then((credential) => {
-                saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
+            // FIX 2: Added 'await' to ensure the database writes successfully before routing to the workspace view
+            firebase.auth().signInAnonymously().then(async (credential) => {
+                await saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
+                proceedToApplicationWorkspace();
             }).catch(() => { proceedToApplicationWorkspace(); });
         }
 
@@ -518,7 +520,6 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             } catch(e) { console.warn("Firestore structural link bypassed."); }
-            proceedToApplicationWorkspace();
         }
 
         function proceedToApplicationWorkspace() {
@@ -556,6 +557,7 @@
                     if(token && id) {
                         TELEGRAM_BOT_TOKEN = token; TELEGRAM_CHAT_ID = id;
                         await saveTelegramTargetDBCredentialsToFirestore(result.user.uid);
+                        proceedToApplicationWorkspace();
                     } else { firebase.auth().signOut(); }
                 }
             }).catch(err => alert("Google link interrupted: " + err.message));
@@ -980,10 +982,10 @@
 
         function jumpToSavedPageIndexContext() { if (cloudOS.last && cloudOS.last.id === readerActiveFileContextId && cloudOS.last.page) { setTimeout(() => { const w = document.getElementById(`virtual-page-node-${cloudOS.last.page}`); if (w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'auto' }); }, 500); } }
         function toggleBookmark() { if(!cloudOS.bookmarks) cloudOS.bookmarks = []; const idx = cloudOS.bookmarks.findIndex(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); if(idx >= 0) cloudOS.bookmarks.splice(idx, 1); else cloudOS.bookmarks.push({ fileId: readerActiveFileContextId, page: currentViewportTrackingPageIndex }); evaluateContextBookmarkUIVisuals(); transmitMetadataPackageToCloud(); }
-        function evaluateContextBookmarkUIVisuals() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('bookmarked'); else btn.classList.remove('bookmarked'); }
+        function evaluateContextBookmarkUIVisuals() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('active-state'); else btn.classList.remove('active-state'); }
         
         function showBookmarks() { 
-            const list = document.getElementById('bookmarks-list'); if(!list) return; list.innerHTML = ''; 
+            const list = document.getElementById('interactive-folder-tree'); if(!list) return; list.innerHTML = ''; 
             const marks = (cloudOS.bookmarks || []).filter(b => b.fileId === readerActiveFileContextId); 
             if(marks.length === 0) { list.innerHTML = `<p style="color:#888;">Empty track markers.</p>`; } 
             else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer;" onclick="jumpToPage(${m.page})">🔖 Jump to structural page: ${m.page}</div>`; }); } 
@@ -1050,11 +1052,14 @@
             transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
         }
 
-        const viewport = document.getElementById('viewport-canvas-container');
-        const zoomContainer = document.getElementById('zoom-container');
-        const pagesContainer = document.getElementById('pdf-pages-container');
-
-        window.addEventListener('load', () => { if(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) proceedToApplicationWorkspace(); });
+        window.addEventListener('load', () => { 
+            // Only auto-route if valid keys exist AND user is already anonymously authed
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                    proceedToApplicationWorkspace();
+                }
+            });
+        });
     </script>
 </body>
 </html>

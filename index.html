@@ -67,8 +67,9 @@
         .app-container { display: flex; width: 100%; height: 100%; }
         
         /* --- SIDEBAR --- */
-        .app-sidebar { width: 260px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.05); }
-        .sidebar-brand { font-size: 18px; font-weight: 700; padding: 0 24px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.3px; }
+        .app-sidebar { width: 260px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 100; }
+        .sidebar-brand { font-size: 18px; font-weight: 700; padding: 0 24px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; letter-spacing: -0.3px; }
+        .mobile-menu-btn { display: none; background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 4px; }
         .sidebar-menu { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
         .menu-item { padding: 12px 16px; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-weight: 500; color: #a0aec0; display: flex; align-items: center; gap: 12px; transition: all 0.2s; }
         .menu-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
@@ -76,8 +77,8 @@
         .sidebar-footer { margin-top: auto; padding: 20px 24px; font-size: 11px; color: #718096; border-top: 1px solid rgba(255,255,255,0.08); }
 
         /* --- MAIN WORKSPACE --- */
-        .main-workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-light); }
-        .workspace-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; background: #fff; border-bottom: 1px solid var(--border-color); z-index: 10; min-height: 45px; }
+        .main-workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-light); z-index: 10; }
+        .workspace-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; background: #fff; border-bottom: 1px solid var(--border-color); min-height: 45px; }
         .workspace-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin: 0; color: #1a202c; }
         .workspace-body { flex: 1; overflow-y: auto; padding: 32px; box-sizing: border-box; }
 
@@ -169,13 +170,22 @@
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* --- MOBILE RESPONSIVE TWEAKS --- */
         @media (max-width: 768px) {
             .app-container { flex-direction: column; }
-            .app-sidebar { width: 100%; height: auto; padding: 12px; flex-direction: row; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
-            .sidebar-brand { border: none; padding: 0; margin: 0; }
-            .sidebar-menu { flex-direction: row; gap: 4px; padding: 0; }
-            .menu-item { padding: 8px 12px; font-size: 13px; }
+            .app-sidebar { width: 100%; height: auto; padding: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); background: #0f172a; position: relative; }
+            
+            /* Clean Mobile Header */
+            .sidebar-brand { padding: 16px 20px; margin: 0; border-bottom: none; width: 100%; box-sizing: border-box; }
+            .mobile-menu-btn { display: block; } /* Show Hamburger */
+            
+            /* Hidden Dropdown Menu for Mobile */
+            .sidebar-menu { display: none; flex-direction: column; width: 100%; position: absolute; top: 100%; left: 0; background: #0f172a; padding: 0 16px 16px 16px; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.08); box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000; }
+            .sidebar-menu.open { display: flex; } /* Toggle Class */
+            
+            .menu-item { padding: 14px 16px; font-size: 15px; }
             .sidebar-footer { display: none; }
+            
             .workspace-header { padding: 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
             .control-panel-cluster { width: 100%; justify-content: space-between; }
             .workspace-body { padding: 16px; }
@@ -252,13 +262,18 @@
         <div class="app-container">
             
             <div class="app-sidebar">
-                <div class="sidebar-brand"><span>📚</span> Shivam Reader</div>
-                <div class="sidebar-menu">
-                    <div class="menu-item active" id="nav-home" onclick="navigateToSPASection('home')"><span>🏠</span> Dashboard</div>
-                    <div class="menu-item" id="nav-manager" onclick="navigateToSPASection('manager')"><span>📁</span> Book Manager</div>
-                    <div class="menu-item" id="nav-settings" onclick="navigateToSPASection('settings')"><span>⚙️</span> Account Settings</div>
-                    <div class="menu-item" onclick="forceCloudDBSync()"><span>🔄</span> Sync Data</div>
+                <div class="sidebar-brand">
+                    <div style="display: flex; align-items: center; gap: 12px;"><span>📚</span> Shivam Reader</div>
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
                 </div>
+                
+                <div class="sidebar-menu" id="nav-sidebar-menu">
+                    <div class="menu-item active" id="nav-home" onclick="navigateToSPASection('home'); closeMobileMenu();"><span>🏠</span> Dashboard</div>
+                    <div class="menu-item" id="nav-manager" onclick="navigateToSPASection('manager'); closeMobileMenu();"><span>📁</span> Book Manager</div>
+                    <div class="menu-item" id="nav-settings" onclick="navigateToSPASection('settings'); closeMobileMenu();"><span>⚙️</span> Account Settings</div>
+                    <div class="menu-item" onclick="forceCloudDBSync(); closeMobileMenu();"><span>🔄</span> Sync Data</div>
+                </div>
+                
                 <div class="sidebar-footer">
                     <div id="connection-status-pill">📡 Cloud Linked</div>
                 </div>
@@ -407,8 +422,9 @@
     </div>
 
     <script>
-        // Explicitly define the PDF.js background worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        // --- ADD THE PDF.JS BACKGROUND WORKER ---
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
         // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
@@ -470,6 +486,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
         function showOverlayElement(id) { show(id); }
         function hideOverlayElement(id) { hide(id); }
+
+        // --- MOBILE MENU FUNCTIONS ---
+        function toggleMobileMenu() {
+            document.getElementById('nav-sidebar-menu').classList.toggle('open');
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('nav-sidebar-menu').classList.remove('open');
+            }
+        }
 
         function toggleAuthFormTab(tabName) {
             document.getElementById('btn-tab-login').classList.remove('active');
@@ -892,21 +919,39 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                 document.getElementById('page-count').innerText = pageCount;
                 
                 await initLazyPages(); jumpToSavedPageIndexContext(); evaluateContextBookmarkUIVisuals(); hideOverlayElement('system-loader');
-            } catch (err) { alert("Terminal Context Error: " + err.message); hideOverlayElement('system-loader'); terminateReaderSession(); }
+            } catch (err) { 
+                console.error("PDF Load Error Details:", err);
+                alert("System Error: " + err.message); 
+                hideOverlayElement('system-loader'); 
+                terminateReaderSession(); 
+            }
         }
 
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); if(diskData) return diskData;
             if(!isOnline) throw new Error("Access rejected. Device is currently offline.");
+            
             const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Access rejected.");
+            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Access rejected by Telegram API.");
             const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
-            const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
+            
+            // USING CORSPROXY.IO TO BYPASS ISP BLOCKS
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
             
             const task = pdfjsLib.getDocument({ url: proxyUrl });
-            task.onProgress = (p) => { if (p.total > 0) { const percent = Math.round((p.loaded / p.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Syncing chunk metrics... ${percent}%`; } };
-            const d = await task.promise; const obj = await d.getData();
-            await saveBookToVault(fileId, obj.buffer); await d.destroy(); return obj.buffer;
+            task.onProgress = (p) => { 
+                if (p.total > 0) { 
+                    const percent = Math.round((p.loaded / p.total) * 100); 
+                    setProgress(percent); 
+                    document.getElementById('loader-message-text').innerText = `Syncing chunk metrics... ${percent}%`; 
+                } 
+            };
+            
+            const d = await task.promise; 
+            const obj = await d.getData();
+            await saveBookToVault(fileId, obj.buffer); 
+            await d.destroy(); 
+            return obj.buffer;
         }
 
         function terminateReaderSession() {

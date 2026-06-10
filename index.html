@@ -34,7 +34,7 @@
 
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-light); color: var(--text-main); }
 
-        /* --- SPA VIEW MANAGER FIX --- */
+        /* --- SPA VIEW MANAGER --- */
         .spa-view { display: none !important; width: 100%; height: 100%; }
         .spa-view.active-view { display: flex !important; }
 
@@ -99,7 +99,7 @@
         .book-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #cbd5e1; }
         .folder-card { background: #fdfcf7; border-color: #e2d9be; }
         
-        .card-body { padding: 28px 20px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-body { padding: 28px 20px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         .card-icon { font-size: 44px; margin-bottom: 16px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); }
         .card-title { font-size: 14px; font-weight: 600; color: #1a202c; line-height: 1.4; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-meta { font-size: 11px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
@@ -115,6 +115,7 @@
         .btn-action:hover { background: #f8fafc; border-color: #cbd5e1; }
         .btn-primary { background: var(--primary); color: #fff; border: none; }
         .btn-primary:hover { background: var(--primary-hover); }
+        .btn-action.active-tool { background: #e0f2fe; border-color: #bae6fd; color: #0369a1; }
         
         .premium-banner { background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%); color: white; padding: 18px 24px; border-radius: var(--radius-lg); margin-bottom: 28px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,120,212,0.25); transition: transform 0.2s; }
         .premium-banner:hover { transform: translateY(-2px); }
@@ -314,6 +315,9 @@
                                 <option value="size-desc">Size (Large to Small)</option>
                                 <option value="size-asc">Size (Small to Large)</option>
                             </select>
+                            
+                            <button type="button" class="btn-action" id="btn-select-mode" onclick="toggleSelectionMode()">☑️ Select Files</button>
+                            
                             <button type="button" class="btn-action" onclick="triggerFolderCreationSequence()">📁 New Folder</button>
                             <div style="position: relative; overflow: hidden; display: inline-block;">
                                 <button type="button" class="btn-action btn-primary">➕ Add Book</button>
@@ -322,12 +326,21 @@
                         </div>
                     </div>
                     <div class="workspace-body">
+                        
+                        <div id="selection-action-bar" style="display: none; background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);">
+                            <div style="font-weight: 600; color: #0369a1;"><span id="sel-count-text">0</span> PDFs Selected</div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-action btn-primary" onclick="executeManualVirtualMerge()">📦 Bind Selected (Virtual)</button>
+                                <button type="button" class="btn-action" onclick="toggleSelectionMode()" style="background:transparent; border:1px solid #7dd3fc; color:#0369a1;">Cancel</button>
+                            </div>
+                        </div>
+
                         <div class="premium-banner virtual-binder-banner" id="virtual-binder-accelerator" style="display: none;" onclick="triggerVirtualBinderAssembly()">
                             <div>
                                 <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">📦 Sequential Split Segments Detected</div>
-                                <div style="font-size: 13px; opacity: 0.9;">Would you like to auto-merge these items based on name into a unified Virtual Book?</div>
+                                <div style="font-size: 13px; opacity: 0.9;">Would you like to auto-merge all parts in this folder into a unified Virtual Book?</div>
                             </div>
-                            <span style="font-weight: 700; font-size: 14px;">Bind Volumes ➜</span>
+                            <span style="font-weight: 700; font-size: 14px;">Auto-Bind Volumes ➜</span>
                         </div>
 
                         <div class="book-grid" id="manager-file-system-grid"></div>
@@ -425,7 +438,7 @@
         // --- ADD THE PDF.JS BACKGROUND WORKER ---
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
+        // --- SECURE FIRESTORE SYNC INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
             authDomain: "shivam-pdf-reader.firebaseapp.com",
@@ -482,6 +495,10 @@
         let movingType = null;
         let isOnline = navigator.onLine;
 
+        // VIRTUAL BINDING STATE
+        let isSelectionMode = false;
+        let selectedFileIds = new Set();
+
         const show = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; };
         const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
         function showOverlayElement(id) { show(id); }
@@ -520,7 +537,6 @@
 
             if(!bot || !chat) { alert("Please populate all necessary validation markers."); return; }
 
-            // Ensure parameters are committed to memory before syncing
             TELEGRAM_BOT_TOKEN = bot;
             TELEGRAM_CHAT_ID = chat;
             
@@ -542,15 +558,10 @@
         function executeDirectAPIPassportBypass() {
             const bot = document.getElementById('direct-bot-token').value.trim();
             const chat = document.getElementById('direct-chat-id').value.trim();
-            
             if(!bot || !chat) { alert("Credentials missing."); return; }
             
-            TELEGRAM_BOT_TOKEN = bot; 
-            TELEGRAM_CHAT_ID = chat;
-            
-            sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); 
-            sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
-            
+            TELEGRAM_BOT_TOKEN = bot; TELEGRAM_CHAT_ID = chat;
+            sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
             proceedToApplicationWorkspace();
         }
 
@@ -565,17 +576,13 @@
         }
 
         function proceedToApplicationWorkspace() {
-            if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-                alert("Critical Error: Missing Telegram routing parameters.");
-                return;
-            }
+            if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) { alert("Critical Error: Missing Telegram routing parameters."); return; }
             document.getElementById('login-view').classList.remove('active-view');
             document.getElementById('core-app-view').classList.add('active-view');
             navigateToSPASection('home');
             forceCloudDBSync();
         }
 
-        // --- FIRESTORE PROFILE CAPTURE PASSES ---
         async function fetchCredentialsFromUserCloudProfile(uid) {
             try {
                 const doc = await firebase.firestore().collection('users').doc(uid).get();
@@ -591,14 +598,11 @@
             return false;
         }
 
-        // --- CLOUD AUTHENTICATION ROUTINES ---
         function executeGoogleOAuthPipeline() {
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider).then(async (result) => {
                 const active = await fetchCredentialsFromUserCloudProfile(result.user.uid);
-                if(active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) { 
-                    proceedToApplicationWorkspace(); 
-                } 
+                if(active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) { proceedToApplicationWorkspace(); } 
                 else {
                     const token = prompt("Google account verified! Enter your existing Telegram Bot Token to link your files:");
                     const id = prompt("Enter your Telegram Chat ID:");
@@ -622,20 +626,15 @@
             firebase.auth().signInWithEmailAndPassword(targetedEmailString, pass).then(async (res) => {
                 const active = await fetchCredentialsFromUserCloudProfile(res.user.uid);
                 hideOverlayElement('system-loader');
-                if (active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-                    proceedToApplicationWorkspace();
-                } else {
-                    alert("Account found but no keys are linked to this profile.");
-                }
+                if (active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) { proceedToApplicationWorkspace(); } 
+                else { alert("Account found but no keys are linked to this profile."); }
             }).catch(err => { hideOverlayElement('system-loader'); alert("Identity cross check mismatch: " + err.message); });
         }
 
         function triggerPasswordResetRecovery() {
             const email = prompt("Enter your account registration email address:");
             if(!email) return;
-            firebase.auth().sendPasswordResetEmail(email).then(() => {
-                alert("Security optimization link transmitted successfully to target mailbox.");
-            }).catch(err => alert("Recovery fault: " + err.message));
+            firebase.auth().sendPasswordResetEmail(email).then(() => { alert("Security optimization link transmitted successfully to target mailbox."); }).catch(err => alert("Recovery fault: " + err.message));
         }
 
         // --- SPA NAVIGATION CORE PLATFORM ---
@@ -666,7 +665,6 @@
         function refreshAccountSettingsPanelDataReadout() {
             const user = firebase.auth().currentUser;
             if(!user) return;
-
             let methods = user.providerData.map(p => p.providerId);
             let hasGoogle = methods.includes('google.com');
             let hasEmail = methods.includes('password') && !user.email.endsWith('.internal');
@@ -680,28 +678,22 @@
         function executeSettingsCredentialLink(providerType) {
             const user = firebase.auth().currentUser;
             if(!user) return;
-
             if(providerType === 'google') {
                 const provider = new firebase.auth.GoogleAuthProvider();
-                user.linkWithPopup(provider).then(() => { alert("Google accounts merged smoothly."); refreshAccountSettingsPanelDataReadout(); })
-                .catch(e => alert("Link rejected: " + e.message));
+                user.linkWithPopup(provider).then(() => { alert("Google accounts merged smoothly."); refreshAccountSettingsPanelDataReadout(); }).catch(e => alert("Link rejected: " + e.message));
             } else if (providerType === 'email') {
                 const targetEmail = prompt("Enter target verification email structure:");
                 const code = prompt("Enter a strong password to bind to this email:");
                 if(!targetEmail || !code) return;
-                
                 const credential = firebase.auth.EmailAuthProvider.credential(targetEmail, code);
-                user.linkWithCredential(credential).then(() => { alert("Identity verified and unified."); refreshAccountSettingsPanelDataReadout(); })
-                .catch(e => alert("Process aborted: " + e.message));
+                user.linkWithCredential(credential).then(() => { alert("Identity verified and unified."); refreshAccountSettingsPanelDataReadout(); }).catch(e => alert("Process aborted: " + e.message));
             } else if (providerType === 'userpass') {
                 const userString = prompt("Enter custom secure alphanumeric alpha username:");
                 const code = prompt("Configure clean system login password string:");
                 if(!userString || !code) return;
-                
                 const virtualEmail = `${userString.trim()}@pdfreader.internal`;
                 const credential = firebase.auth.EmailAuthProvider.credential(virtualEmail, code);
-                user.linkWithCredential(credential).then(() => { alert("Username parameters mapped explicitly."); refreshAccountSettingsPanelDataReadout(); })
-                .catch(e => alert("Configuration fault: " + e.message));
+                user.linkWithCredential(credential).then(() => { alert("Username parameters mapped explicitly."); refreshAccountSettingsPanelDataReadout(); }).catch(e => alert("Configuration fault: " + e.message));
             }
         }
 
@@ -720,11 +712,9 @@
             bar.style.width = percent + '%';
         }
 
-        // --- NETWORK MATRIX LISTENERS ---
         window.addEventListener('online', () => { isOnline = true; document.getElementById('connection-status-pill').innerText = "📡 Cloud Linked"; transmitMetadataPackageToCloud(); });
         window.addEventListener('offline', () => { isOnline = false; document.getElementById('connection-status-pill').innerText = "✈️ Vault Offline"; });
 
-        // --- TELEGRAM DB CORE INTERFACES ---
         async function transmitMetadataPackageToCloud() {
             if(!isOnline || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
             try {
@@ -735,9 +725,7 @@
                     body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: dbString, disable_notification: true })
                 });
                 const data = await res.json();
-                if (data.ok) {
-                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/pinChatMessage?chat_id=${TELEGRAM_CHAT_ID}&message_id=${data.result.message_id}&disable_notification=true`);
-                }
+                if (data.ok) { await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/pinChatMessage?chat_id=${TELEGRAM_CHAT_ID}&message_id=${data.result.message_id}&disable_notification=true`); }
             } catch (err) {}
         }
 
@@ -794,19 +782,56 @@
             });
         }
 
+        // --- NEW VIRTUAL MANUAL MERGE SELECTION ---
+        function toggleSelectionMode() {
+            isSelectionMode = !isSelectionMode;
+            selectedFileIds.clear();
+            document.getElementById('selection-action-bar').style.display = isSelectionMode ? 'flex' : 'none';
+            document.getElementById('btn-select-mode').classList.toggle('active-tool', isSelectionMode);
+            renderManagerFileSystemGrid();
+        }
+
+        function toggleFileSelection(fileId, event) {
+            event.stopPropagation();
+            if (selectedFileIds.has(fileId)) { selectedFileIds.delete(fileId); } 
+            else { selectedFileIds.add(fileId); }
+            document.getElementById('sel-count-text').innerText = selectedFileIds.size;
+            renderManagerFileSystemGrid();
+        }
+
+        function executeManualVirtualMerge() {
+            if (selectedFileIds.size < 2) { alert("Please select at least 2 files to bind."); return; }
+            const name = prompt("Enter a name for this Virtual Book Bundle:");
+            if (!name) return;
+
+            let filesToBind = cloudOS.files.filter(f => selectedFileIds.has(f.id));
+            filesToBind.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+            const compoundId = "virtual_" + Date.now();
+            cloudOS.files.push({
+                id: compoundId, name: `📦 ${name}.pdf`, size: "~ Combined Pack",
+                parentId: currentParentId, isVirtualCompound: true, compositionSequence: filesToBind.map(f => f.id), timestamp: Date.now()
+            });
+
+            transmitMetadataPackageToCloud();
+            toggleSelectionMode(); // Exits mode and re-renders
+        }
+
         function renderManagerFileSystemGrid() {
             const grid = document.getElementById('manager-file-system-grid'); grid.innerHTML = '';
             const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
+            
+            // Auto Bind Banner check
             const patterns = [/_part\d+/i, /-part\d+/i, /_vol\d+/i, /-vol\d+/i, /part_\d+/i, /vol_\d+/i];
             let detectionTriggered = false;
             for(let file of internalFiles) { if(patterns.some(p => p.test(file.name))) { detectionTriggered = true; break; } }
-            document.getElementById('virtual-binder-accelerator').style.display = detectionTriggered ? 'flex' : 'none';
+            document.getElementById('virtual-binder-accelerator').style.display = (detectionTriggered && !isSelectionMode) ? 'flex' : 'none';
 
             const crumbs = resolveBreadcrumbHierarchy(currentParentId);
             const crumbContainer = document.getElementById('manager-breadcrumbs-node'); crumbContainer.innerHTML = '';
             crumbs.forEach((crumb, index) => {
                 const link = document.createElement('span'); link.className = 'crumb-item'; link.innerText = crumb.name;
-                link.onclick = () => { currentParentId = crumb.id; renderManagerFileSystemGrid(); };
+                link.onclick = () => { currentParentId = crumb.id; isSelectionMode = false; document.getElementById('selection-action-bar').style.display='none'; document.getElementById('btn-select-mode').classList.remove('active-tool'); renderManagerFileSystemGrid(); };
                 crumbContainer.appendChild(link);
                 if (index < crumbs.length - 1) {
                     const sep = document.createElement('span'); sep.innerText = ' / '; sep.style.color = "var(--text-muted)";
@@ -849,10 +874,17 @@
             [...activeFiles].reverse().forEach(file => {
                 const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
                 const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:16px; z-index:2;">🔖</div>` : '';
+                
+                const isSelected = selectedFileIds.has(file.id);
+                const selBorder = isSelected ? `border: 2px solid var(--primary); background: #f0f9ff;` : ``;
+                const selCheck = isSelected ? `<div style="position:absolute; top:10px; right:10px; font-size:18px; z-index:2;">✅</div>` : '';
+                
+                const clickAction = isSelectionMode ? `toggleFileSelection('${file.id}', event)` : `initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')`;
+
                 const card = document.createElement('div'); card.className = 'book-card';
                 card.innerHTML = `
-                    ${markHtml}
-                    <div class="card-body" onclick="initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
+                    ${markHtml} ${selCheck}
+                    <div class="card-body" style="${selBorder}" onclick="${clickAction}">
                         <div class="card-icon">📄</div><div class="card-title">${file.name}</div><div class="card-meta">${file.size}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
@@ -864,7 +896,7 @@
             });
         }
 
-        function openFolder(folderId) { currentParentId = folderId; renderManagerFileSystemGrid(); }
+        function openFolder(folderId) { currentParentId = folderId; isSelectionMode = false; document.getElementById('selection-action-bar').style.display='none'; document.getElementById('btn-select-mode').classList.remove('active-tool'); renderManagerFileSystemGrid(); }
         function triggerFolderCreationSequence() { const name = prompt("Enter new folder designator name:"); if (!name || name.trim() === "") return; cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name.trim(), parentId: currentParentId }); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
         function renameFile(id) { const file = cloudOS.files.find(f => f.id === id); if (!file) return; const newName = prompt("Enter modified parameter string:", file.name); if (newName && newName.trim() !== "") { file.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
         function renameFolder(id) { const folder = cloudOS.folders.find(f => f.id === id); if (!folder) return; const newName = prompt("Enter modified parameter string:", folder.name); if (newName && newName.trim() !== "") { folder.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
@@ -893,7 +925,14 @@
             if (instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect(); globalCompoundDocumentLayoutMap = [];
 
             if(!cloudOS.last) cloudOS.last = {};
-            cloudOS.last.id = file_id; cloudOS.last.name = fileName; transmitMetadataPackageToCloud();
+            cloudOS.last.id = file_id; cloudOS.last.name = fileName; 
+            
+            let historyIndex = cloudOS.history.findIndex(h => h.id === file_id);
+            if(historyIndex > -1) { cloudOS.history.splice(historyIndex, 1); }
+            cloudOS.history.push({id: file_id, name: fileName});
+            if(cloudOS.history.length > 20) cloudOS.history.shift();
+            
+            transmitMetadataPackageToCloud();
 
             try {
                 document.getElementById('core-app-view').style.display = 'none'; document.getElementById('reader-view').style.display = 'flex';
@@ -927,31 +966,28 @@
             }
         }
 
+        // --- RAW ARRAYBUFFER MANUAL DOWNLOAD PIPELINE FIX ---
         async function fetchTargetBinaryBufferBytes(fileId) {
-            let diskData = await getBookFromVault(fileId); if(diskData) return diskData;
+            let diskData = await getBookFromVault(fileId); 
+            if(diskData && diskData.byteLength > 100) return diskData; 
+            
             if(!isOnline) throw new Error("Access rejected. Device is currently offline.");
             
             const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Access rejected by Telegram API.");
-            const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
+            const pathData = await pathRes.json(); 
+            if (!pathData.ok) throw new Error("Access rejected by Telegram API.");
             
-            // USING CORSPROXY.IO TO BYPASS ISP BLOCKS
+            const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
             
-            const task = pdfjsLib.getDocument({ url: proxyUrl });
-            task.onProgress = (p) => { 
-                if (p.total > 0) { 
-                    const percent = Math.round((p.loaded / p.total) * 100); 
-                    setProgress(percent); 
-                    document.getElementById('loader-message-text').innerText = `Syncing chunk metrics... ${percent}%`; 
-                } 
-            };
+            document.getElementById('loader-message-text').innerText = `Downloading document stream...`;
             
-            const d = await task.promise; 
-            const obj = await d.getData();
-            await saveBookToVault(fileId, obj.buffer); 
-            await d.destroy(); 
-            return obj.buffer;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error("Proxy gateway refused connection.");
+            
+            const arrayBuffer = await response.arrayBuffer();
+            await saveBookToVault(fileId, arrayBuffer); 
+            return arrayBuffer;
         }
 
         function terminateReaderSession() {
@@ -1079,7 +1115,7 @@
 
         document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            const CHUNK_LIMIT = 10 * 1024 * 1024;
+            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB chunking limit
             try {
                 if (file.size <= 19 * 1024 * 1024) {
                     showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
@@ -1110,6 +1146,7 @@
             hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
         });
 
+        // AUTO MERGE FOR SPLIT FILES
         function triggerVirtualBinderAssembly() {
             const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
             segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
@@ -1130,7 +1167,6 @@
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
                     const hasKeys = await fetchCredentialsFromUserCloudProfile(user.uid);
-                    // Explicitly check that keys exist before forcing the view transition
                     if (hasKeys && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
                         proceedToApplicationWorkspace();
                     }

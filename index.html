@@ -191,6 +191,25 @@
             .control-panel-cluster { width: 100%; justify-content: space-between; }
             .workspace-body { padding: 16px; }
             .reader-action-cluster span { display: none; }
+            /* --- UPGRADED MOBILE READER HEADER --- */
+        .reader-header-bar { 
+            flex-direction: column; 
+            align-items: stretch; 
+            padding: 12px; 
+            gap: 12px; 
+            height: auto; 
+        }
+        .reader-action-cluster { 
+            width: 100%; 
+            overflow-x: auto; /* Allows swiping left/right through tools */
+            justify-content: flex-start;
+            padding-bottom: 6px;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        .reader-action-cluster::-webkit-scrollbar { height: 4px; }
+        .reader-action-cluster::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        #pdf-search-input { width: 90px !important; } /* Shrinks search box to fit */
+        .reader-action-cluster span { display: none; }
         }
     </style>
 </head>

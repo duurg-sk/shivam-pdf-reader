@@ -406,10 +406,10 @@
         <button class="immersive-vision-switch" onclick="toggleImmersive()">👁️</button>
     </div>
 
-    <script>
-        // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
+<script>
+        // --- SECURE FIRESTORE SYNC INITIALIZATION ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cd0bsgTpybE",
+            apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
             authDomain: "shivam-pdf-reader.firebaseapp.com",
             projectId: "shivam-pdf-reader",
             storageBucket: "shivam-pdf-reader.firebasestorage.app",
@@ -461,10 +461,11 @@
         let cloudOS = { folders: [], files: [], last: null, bookmarks: [], history: [] };
         let currentParentId = "root"; 
         let movingBookId = null;
+        let movingType = null;
         let isOnline = navigator.onLine;
 
-        const show = (id) => document.getElementById(id).style.display = 'flex';
-        const hide = (id) => document.getElementById(id).style.display = 'none';
+        const show = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; };
+        const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
         function showOverlayElement(id) { show(id); }
         function hideOverlayElement(id) { hide(id); }
 
@@ -496,11 +497,15 @@
             sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
             try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
 
-            // FIX 2: Added 'await' to ensure the database writes successfully before routing to the workspace view
+            showOverlayElement('system-loader');
             firebase.auth().signInAnonymously().then(async (credential) => {
                 await saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
+                hideOverlayElement('system-loader');
                 proceedToApplicationWorkspace();
-            }).catch(() => { proceedToApplicationWorkspace(); });
+            }).catch((err) => { 
+                hideOverlayElement('system-loader');
+                proceedToApplicationWorkspace(); 
+            });
         }
 
         function executeDirectAPIPassportBypass() {
@@ -674,7 +679,7 @@
 
         // --- TELEGRAM DB CORE INTERFACES ---
         async function transmitMetadataPackageToCloud() {
-            if(!isOnline) return;
+            if(!isOnline || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
             try {
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/unpinAllChatMessages?chat_id=${TELEGRAM_CHAT_ID}`);
                 const dbString = "[OS_DB]" + JSON.stringify(cloudOS);
@@ -690,7 +695,7 @@
         }
 
         async function forceCloudDBSync() {
-            if(!isOnline) { renderManagerFileSystemGrid(); renderDashboardHomePlatform(); return; }
+            if(!isOnline || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) { renderManagerFileSystemGrid(); renderDashboardHomePlatform(); return; }
             showOverlayElement('system-loader');
             document.getElementById('loader-message-text').innerText = "Synchronizing global network branches...";
             setProgress(-1);
@@ -833,7 +838,7 @@
 
         // --- CONTINUOUS ACCELERATED RENDERING PIPELINE CONTROLLERS ---
         let globalCompoundDocumentLayoutMap = []; let activeViewportScaleValue = 1.0; let baseLayoutContainerWidth = 800; let basePageRatio = 1.414; let runtimeRenderedPageTrackingSet = new Set();
-        let instantiatedIntersectObserver = null; let readerActiveFileContextId = null; let currentViewportTrackingPageIndex = 1;
+        let instantiatedIntersectObserver = null; let readerActiveFileContextId = null; let currentViewportTrackingPageIndex = 1; let isImmersive = false; let currentTool = 'pan';
 
         async function initializePDFReaderViewport(file_id, fileName) {
             showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = "Loading local document layers..."; setProgress(0);
@@ -872,7 +877,7 @@
 
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); if(diskData) return diskData;
-            if(!isOnline) throw new Error("Connection failed.");
+            if(!isOnline) throw new Error("Access rejected. Device is currently offline.");
             const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
             const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Access rejected.");
             const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
@@ -946,6 +951,9 @@
             await page.render({ canvasContext: canvas.getContext('2d'), viewport: renderViewport }).promise;
         }
 
+        function zoomIn() { executeViewportZoomModification(0.2); }
+        function zoomOut() { executeViewportZoomModification(-0.2); }
+
         function executeViewportZoomModification(amount) {
             activeViewportScaleValue += amount; if(activeViewportScaleValue < 0.5) activeViewportScaleValue = 0.5; if(activeViewportScaleValue > 2.5) activeViewportScaleValue = 2.5;
             document.getElementById('zoom-container').style.transform = `scale(${activeViewportScaleValue})`;
@@ -987,8 +995,8 @@
         function showBookmarks() { 
             const list = document.getElementById('interactive-folder-tree'); if(!list) return; list.innerHTML = ''; 
             const marks = (cloudOS.bookmarks || []).filter(b => b.fileId === readerActiveFileContextId); 
-            if(marks.length === 0) { list.innerHTML = `<p style="color:#888;">Empty track markers.</p>`; } 
-            else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer;" onclick="jumpToPage(${m.page})">🔖 Jump to structural page: ${m.page}</div>`; }); } 
+            if(marks.length === 0) { list.innerHTML = `<p style="color:#888; padding:10px;">No custom bookmark positions mapped for this textbook file.</p>`; } 
+            else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer; border-bottom: 1px solid var(--border-color);" onclick="jumpToPage(${m.page})">🔖 Jump to structural page: ${m.page}</div>`; }); } 
             showOverlayElement('move-structural-modal'); 
         }
         function jumpToPage(pg) { hideOverlayElement('move-structural-modal'); const w = document.getElementById(`virtual-page-node-${pg}`); if(w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'smooth' }); }
@@ -1052,11 +1060,18 @@
             transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
         }
 
+        const viewport = document.getElementById('viewport-canvas-container');
+        const zoomContainer = document.getElementById('zoom-container');
+        const pagesContainer = document.getElementById('pdf-pages-container');
+
         window.addEventListener('load', () => { 
-            // Only auto-route if valid keys exist AND user is already anonymously authed
             firebase.auth().onAuthStateChanged((user) => {
-                if (user && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-                    proceedToApplicationWorkspace();
+                if (user) {
+                    fetchCredentialsFromUserCloudProfile(user.uid).then((hasKeys) => {
+                        if (hasKeys || (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID)) {
+                            proceedToApplicationWorkspace();
+                        }
+                    });
                 }
             });
         });

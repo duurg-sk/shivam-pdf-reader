@@ -8,6 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary: #0078d4;
@@ -28,22 +32,36 @@
             --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
         }
 
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-light); color: var(--text-main); }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-light); color: var(--text-main); }
 
         /* --- SPA VIEW MANAGER --- */
         .spa-view { display: none; width: 100%; height: 100%; }
         .active-view { display: flex !important; }
 
-        /* --- PREMIUM AUTH/LOGIN VIEW --- */
-        #login-view { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; }
-        .login-card { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 40px; width: 360px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); color: #fff; }
-        .login-logo { font-size: 48px; margin-bottom: 15px; }
-        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
-        .login-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 30px; }
-        .login-field { width: 100%; box-sizing: border-box; padding: 12px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); color: #fff; font-size: 14px; margin-bottom: 16px; outline: none; transition: all 0.2s; }
-        .login-field:focus { border-color: var(--primary); background: rgba(255,255,255,0.12); box-shadow: 0 0 0 3px rgba(0,120,212,0.3); }
-        .login-btn { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: var(--radius-md); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
-        .login-btn:hover { background: var(--primary-hover); }
+        /* --- PREMIUM AUTH SYSTEM GATEWAY --- */
+        #login-view { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .auth-container { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 35px; width: 400px; max-width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.3); color: #fff; }
+        .auth-logo { font-size: 44px; margin-bottom: 12px; text-align: center;}
+        .auth-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center; letter-spacing: -0.5px; }
+        
+        .tab-switcher { display: flex; background: rgba(0,0,0,0.2); padding: 4px; border-radius: var(--radius-md); margin-bottom: 24px; }
+        .tab-btn { flex: 1; padding: 10px; background: transparent; border: none; color: #94a3b8; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        .tab-btn.active { background: var(--primary); color: #fff; }
+
+        .form-panel { display: none; flex-direction: column; text-align: left; }
+        .form-panel.active { display: flex; }
+        
+        .form-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .auth-field { width: 100%; box-sizing: border-box; padding: 12px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-md); color: #fff; font-size: 14px; margin-bottom: 16px; outline: none; transition: all 0.2s; }
+        .auth-field:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); box-shadow: 0 0 0 3px rgba(0,120,212,0.2); }
+        
+        .divider-line { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #64748b; font-size: 12px; font-weight: 500; }
+        .divider-line::before, .divider-line::after { content: ''; flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .divider-line:not(:empty)::before { margin-right: .5em; }
+        .divider-line:not(:empty)::after { margin-left: .5em; }
+
+        .btn-oauth { width: 100%; padding: 12px; background: #fff; border: none; border-radius: var(--radius-md); color: #1e293b; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.2s; box-shadow: var(--shadow-sm); }
+        .btn-oauth:hover { background: #f1f5f9; }
 
         /* --- ROOT APP FRAMEWORK --- */
         .app-container { display: flex; width: 100%; height: 100%; }
@@ -63,7 +81,17 @@
         .workspace-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin: 0; color: #1a202c; }
         .workspace-body { flex: 1; overflow-y: auto; padding: 32px; box-sizing: border-box; }
 
-        /* --- SHARED CARD & GRID UI --- */
+        /* --- SETTINGS INTERFACE STYLES (NEW) --- */
+        .settings-card { background: #fff; border-radius: var(--radius-lg); padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; max-width: 650px; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-info h4 { margin: 0 0 4px 0; font-size: 15px; font-weight: 600; }
+        .settings-info p { margin: 0; font-size: 13px; color: var(--text-muted); }
+        .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .badge-linked { background: #e6f4ea; color: #137333; }
+        .badge-unlinked { background: #fce8e6; color: #c5221f; }
+
+        /* --- PLATFORM CARD GRIDS --- */
         .section-heading { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
         .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
         .book-card { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -81,21 +109,19 @@
         .card-footer button:last-child { border-right: none; }
         .card-footer button:hover { background: rgba(0,0,0,0.03); color: var(--primary); }
 
-        /* --- UTILITY COMPONENT HOOKS --- */
+        /* --- CONTROL INFRASTRUCTURE HOOKS --- */
         .btn-action { background: #fff; color: var(--text-main); padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); font-size: 13px; display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); transition: all 0.2s; }
         .btn-action:hover { background: #f8fafc; border-color: #cbd5e1; }
         .btn-primary { background: var(--primary); color: #fff; border: none; }
         .btn-primary:hover { background: var(--primary-hover); }
         
-        /* --- BANNERS & ACCELERATORS --- */
         .premium-banner { background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%); color: white; padding: 18px 24px; border-radius: var(--radius-lg); margin-bottom: 28px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,120,212,0.25); transition: transform 0.2s; }
         .premium-banner:hover { transform: translateY(-2px); }
         .virtual-binder-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 6px 20px rgba(16,185,129,0.25); margin-bottom: 24px; }
 
-        /* --- CONTROL PACKETS --- */
         .control-panel-cluster { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .search-input-wrapper { position: relative; }
-        .search-input-wrapper input { padding: 8px 12px 8px 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 13px; width: 200px; outline: none; transition: all 0.2s; }
+        .search-input-wrapper input { padding: 8px 12px 8px 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 13px; width: 190px; outline: none; transition: all 0.2s; }
         .search-input-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,120,212,0.15); }
         .search-input-wrapper::before { content: "🔍"; position: absolute; left: 10px; top: 8px; font-size: 12px; }
         .sort-dropdown { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; font-size: 13px; font-weight: 500; outline: none; cursor: pointer; }
@@ -104,10 +130,10 @@
         .crumb-item { cursor: pointer; color: var(--text-main); }
         .crumb-item:hover { color: var(--primary); }
 
-        /* --- IMMERSIVE READER PAGE --- */
+        /* --- IMMERSIVE VIEWPORT CAPABILITIES --- */
         #reader-view { display: none; width: 100%; height: 100%; flex-direction: column; background: #e2e8f0; position: relative; }
         .reader-header-bar { width: 100%; min-height: 56px; background: #111; color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .reader-title-field { font-size: 14px; font-weight: 500; color: #e2e8f0; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .reader-title-field { font-size: 14px; font-weight: 500; color: #e2e8f0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
         .reader-action-cluster { display: flex; gap: 8px; align-items: center; }
         
         .btn-edge-dark { background: transparent; color: #cbd5e1; border: none; height: 38px; padding: 0 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
@@ -130,16 +156,14 @@
         .circular-floating-btn.active-state { background: var(--accent); color: #000; border-color: var(--accent); }
 
         .immersive-vision-switch { position: fixed; bottom: 24px; right: 24px; background: rgba(17,17,17,0.5); backdrop-filter: blur(4px); color: #fff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 18px; cursor: pointer; z-index: 1001; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-        .immersive-vision-switch:hover { background: rgba(17,17,17,0.9); }
         
         .immersive-mode .reader-header-bar { transform: translateY(-100%); position: absolute; }
         .immersive-mode .reader-floating-footer { transform: translate(-50%, 160%); }
 
-        /* --- CORE OVERLAYS & DIALOG BOXES --- */
+        /* --- MODAL DIALOG CONTAINER PANELS --- */
         .system-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .dialog-container-box { background: #fff; padding: 32px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 360px; text-align: center; border: 1px solid var(--border-color); }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto; }
-        
         .progress-track { width: 100%; height: 6px; background: #edf2f7; border-radius: 3px; margin-top: 16px; overflow: hidden; display: none; }
         .progress-fill-node { width: 0%; height: 100%; background: var(--primary); transition: width 0.1s ease; }
 
@@ -164,7 +188,7 @@
     <div id="system-loader" class="system-modal-overlay" style="display: none;">
         <div class="dialog-container-box">
             <div class="loading-spinner"></div>
-            <h3 id="loader-message-text" style="margin: 0; font-size: 15px; font-weight: 600;">Processing request...</h3>
+            <h3 id="loader-message-text" style="margin: 0; font-size: 15px; font-weight: 600;">Processing Request...</h3>
             <div class="progress-track" id="loader-progress-track">
                 <div class="progress-fill-node" id="loader-progress-fill"></div>
             </div>
@@ -180,12 +204,47 @@
     </div>
 
     <div id="login-view" class="spa-view active-view">
-        <div class="login-card">
-            <div class="login-logo">📚</div>
-            <div class="login-title">Shivam PDF Reader</div>
-            <div class="login-subtitle">Cloud Native Offline Storage Terminal</div>
-            <input type="password" id="gateway-passphrase" class="login-field" placeholder="Enter Access Pin / Password">
-            <button class="login-btn" onclick="executeGatewayAuthentication()">Unlock Terminal</button>
+        <div class="auth-container">
+            <div class="auth-logo">📚</div>
+            <div class="auth-title">Shivam PDF Reader</div>
+            
+            <div class="tab-switcher">
+                <button class="tab-btn active" id="btn-tab-login" onclick="toggleAuthFormTab('login')">Log In</button>
+                <button class="tab-btn" id="btn-tab-create" onclick="toggleAuthFormTab('create')">Create Account</button>
+            </div>
+
+            <div id="panel-login" class="form-panel active">
+                <div id="login-credentials-section">
+                    <div class="form-label">Username / Email</div>
+                    <input type="text" id="login-identifier" class="auth-field" placeholder="Enter username or email">
+                    <div class="form-label">Password</div>
+                    <input type="password" id="login-password" class="auth-field" placeholder="••••••••">
+                    <button class="login-btn" onclick="executeIdentityPassphraseLogin()">Sign In</button>
+                    <p style="text-align:right; margin: 10px 0 0 0;"><a href="#" onclick="triggerPasswordResetRecovery()" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">Forgot Password?</a></p>
+                </div>
+                
+                <div class="divider-line">OR USE CORE API</div>
+                
+                <div class="form-label">Telegram Bot Token</div>
+                <input type="text" id="direct-bot-token" class="auth-field" placeholder="Enter Bot Token">
+                <div class="form-label">Telegram Chat ID</div>
+                <input type="text" id="direct-chat-id" class="auth-field" placeholder="Enter Chat ID">
+                <button class="login-btn" style="background:#475569;" onclick="executeDirectAPIPassportBypass()">Access via Direct API Keys</button>
+
+                <div class="divider-line">OR ALTERNATIVE ACCESS</div>
+                <button class="btn-oauth" onclick="executeGoogleOAuthPipeline()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G"> Continue with Google</button>
+            </div>
+
+            <div id="panel-create" class="form-panel">
+                <div style="background: rgba(0,120,212,0.1); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size:12px; color:#93c5fd; line-height:1.4;">
+                    <strong>Notice:</strong> Cloud profile generation is completely optional. Provide your personal infrastructure endpoints below to build an instant local workspace workspace.
+                </div>
+                <div class="form-label">Telegram Bot Token <span style="color:#ef4444;">*</span></div>
+                <input type="text" id="create-bot-token" class="auth-field" placeholder="Enter Token (e.g. 123456:ABC...)">
+                <div class="form-label">Telegram Chat ID <span style="color:#ef4444;">*</span></div>
+                <input type="text" id="create-chat-id" class="auth-field" placeholder="Enter Chat ID (e.g. 987654321)">
+                <button class="login-btn" onclick="executeAnonymousStorageOnboarding()">Initialize Storage Drive</button>
+            </div>
         </div>
     </div>
 
@@ -197,10 +256,11 @@
                 <div class="sidebar-menu">
                     <div class="menu-item active" id="nav-home" onclick="navigateToSPASection('home')"><span>🏠</span> Dashboard</div>
                     <div class="menu-item" id="nav-manager" onclick="navigateToSPASection('manager')"><span>📁</span> Book Manager</div>
+                    <div class="menu-item" id="nav-settings" onclick="navigateToSPASection('settings')"><span>⚙️</span> Account Settings</div>
                     <div class="menu-item" onclick="forceCloudDBSync()"><span>🔄</span> Sync Data</div>
                 </div>
                 <div class="sidebar-footer">
-                    <div id="connection-status-pill">📡 Checking link...</div>
+                    <div id="connection-status-pill">📡 Cloud Linked</div>
                 </div>
             </div>
 
@@ -208,7 +268,7 @@
                 
                 <div id="subview-home" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
                     <div class="workspace-header">
-                        <h1 class="workspace-title">Welcome Back</h1>
+                        <h1 class="workspace-title">Dashboard</h1>
                     </div>
                     <div class="workspace-body">
                         <div class="premium-banner" id="dashboard-continue-banner" style="display: none;" onclick="triggerRecentResume()">
@@ -219,7 +279,7 @@
                             <span style="font-weight: 700; font-size: 14px;">Open Book ➜</span>
                         </div>
 
-                        <div class="section-heading">Recently Opened or Uploaded Documents</div>
+                        <div class="section-heading">Recently Opened Documents</div>
                         <div class="book-grid" id="dashboard-recent-grid"></div>
                     </div>
                 </div>
@@ -259,6 +319,52 @@
                     </div>
                 </div>
 
+                <div id="subview-settings" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+                    <div class="workspace-header">
+                        <h1 class="workspace-title">Account Settings</h1>
+                    </div>
+                    <div class="workspace-body">
+                        
+                        <div class="settings-card">
+                            <h3 style="margin-top:0; margin-bottom:20px; font-size:18px;">Identity Providers & Security Upgrades</h3>
+                            <p style="font-size:13px; color:var(--text-muted); margin-bottom:24px; line-height:1.4;">
+                                Secure your local storage drive workspace by binding this temporary session parameters to a permanent ecosystem account. This locks your libraries across multiple devices securely.
+                            </p>
+
+                            <div class="settings-row">
+                                <div class="settings-info">
+                                    <h4>Google Integration Sync</h4>
+                                    <p id="meta-label-google">Unlinked</p>
+                                </div>
+                                <button id="btn-link-google" class="btn-action" onclick="executeSettingsCredentialLink('google')">Link Profile</button>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-info">
+                                    <h4>Email Link + OTP Validation</h4>
+                                    <p id="meta-label-email">Unlinked</p>
+                                </div>
+                                <button id="btn-link-email" class="btn-action" onclick="executeSettingsCredentialLink('email')">Link Email</button>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-info">
+                                    <h4>Custom Core Password Credentials</h4>
+                                    <p id="meta-label-userpass">Unlinked</p>
+                                </div>
+                                <button id="btn-link-userpass" class="btn-action" onclick="executeSettingsCredentialLink('userpass')">Configure Password</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card" style="border-color: #fecaca; background: #fffafb;">
+                            <h3 style="color:#dc2626; margin-top:0; font-size:16px;">Danger Zone</h3>
+                            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Discard current storage credentials and lock this browser environment sector workspace.</p>
+                            <button class="btn-action" style="border-color:#ef4444; color:#dc2626;" onclick="executeProfileSessionSignOut()">De-authenticate Workspace</button>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -270,56 +376,73 @@
                 <h2 class="reader-title-field" id="reader-active-document-title">Document Viewport</h2>
             </div>
             <div class="reader-action-cluster">
-                <div class="search-input-wrapper" style="background: rgba(255,255,255,0.08); border-radius: var(--radius-md);">
-                    <input type="text" id="reader-in-file-search-field" placeholder="Find text..." style="background:transparent; color:#fff; border:none; width:120px;">
+                <button class="btn-edge-dark" onclick="showBookmarks()">📑 <span>Bookmarks</span></button>
+                <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
+                <div class="search-container">
+                    <input type="text" id="reader-in-file-search-field" placeholder="Search text...">
                 </div>
                 <button class="btn-edge-dark" onclick="executeInFileSearchQuery()">🔍 Scan</button>
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
-                <button class="btn-edge-dark active-tool" id="tool-pan" onclick="toggleReaderInteractionTool('pan')">✋ <span>Scroll</span></button>
+                <button class="btn-edge-dark active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Select Text</span></button>
                 <button class="btn-edge-dark" onclick="executeViewportZoomModification(0.2)">➕ <span>Zoom In</span></button>
                 <button class="btn-edge-dark" onclick="executeViewportZoomModification(-0.2)">➖</button>
             </div>
         </div>
 
         <div id="viewport-canvas-container" class="viewport-canvas-container">
-            <div class="zoom-scaler-node" id="zoom-scaler-node">
-                <div id="continuous-pages-stack" class="continuous-pages-stack"></div>
+            <div class="zoom-container" id="zoom-container">
+                <div id="pdf-pages-container" class="pdf-pages-container"></div>
             </div>
         </div>
 
         <div class="reader-floating-footer">
-            <button class="circular-floating-btn" id="reader-bookmark-toggle-node" onclick="togglePageBookmarkState()" title="Bookmark Page">🔖</button>
-            <div class="page-pill-badge">
-                Page <span id="reader-current-page-indicator">1</span> / <span id="reader-total-page-count">?</span>
+            <button class="bookmark-btn" id="bookmark-btn" onclick="toggleBookmark()" title="Bookmark Page">🔖</button>
+            <div class="edge-page-pill">
+                Page <span id="page-number">1</span> / <span id="page-count">?</span>
             </div>
-            <div id="reader-runtime-status-node" style="font-size: 11px; color:#fff; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; display:none;">Synced</div>
+            <div id="sync-status" style="margin-left:10px; font-size: 12px; color:#fff; display:none;">Ready</div>
         </div>
 
-        <button class="immersive-vision-switch" onclick="toggleImmersiveReadingMode()" title="Toggle Viewport Focus">👁️</button>
+        <button class="immersive-toggle" onclick="toggleImmersive()">👁️</button>
     </div>
 
     <script>
-        // --- SECURE CRYPT KEY VAULT ---
-        const LOCAL_STORAGE_DB_NAME = "ShivamPDFReaderDB";
-        let indexedDBSystemInstance;
+        // --- SECURE LOCAL CODES STORAGE CONFIGURATION ---
+        // REPLACE WITH THE ACTUAL CREDENTIAL CONFIGURATION GENERATED DIRECTLY IN YOUR FIREBASE CONSOLE INTERFACE
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APPLICATION_ID"
+        };
+        
+        // Initializer catch layer to avoid runtime errors prior to console binding pass
+        if(firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+        }
 
-        const initializeIndexedDBStorageVault = new Promise((resolve, reject) => {
-            const request = indexedDB.open(LOCAL_STORAGE_DB_NAME, 1);
+        const DB_NAME = "ShivamPDFStorageVaultDB";
+        let localVault;
+
+        const initDB = new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
             request.onupgradeneeded = (e) => {
-                indexedDBSystemInstance = e.target.result;
-                if (!indexedDBSystemInstance.objectStoreNames.contains('pdfVault')) {
-                    indexedDBSystemInstance.createObjectStore('pdfVault', { keyPath: 'id' });
+                localVault = e.target.result;
+                if (!localVault.objectStoreNames.contains('pdfVault')) {
+                    localVault.createObjectStore('pdfVault', { keyPath: 'id' });
                 }
             };
-            request.onsuccess = (e) => { indexedDBSystemInstance = e.target.result; resolve(); };
+            request.onsuccess = (e) => { localVault = e.target.result; resolve(); };
             request.onerror = (e) => { reject(); };
         });
 
-        async function pullBinaryBufferFromDiskVault(fileId) {
-            await initializeIndexedDBStorageVault;
+        async function getBookFromVault(fileId) {
+            await initDB;
             return new Promise((resolve) => {
-                if(!indexedDBSystemInstance) return resolve(null);
-                const tx = indexedDBSystemInstance.transaction('pdfVault', 'readonly');
+                if(!localVault) return resolve(null);
+                const tx = localVault.transaction('pdfVault', 'readonly');
                 const store = tx.objectStore('pdfVault');
                 const req = store.get(fileId);
                 req.onsuccess = () => resolve(req.result ? req.result.data : null);
@@ -327,94 +450,263 @@
             });
         }
 
-        async function saveBinaryBufferToDiskVault(fileId, arrayBuffer) {
-            await initializeIndexedDBStorageVault;
-            if(!indexedDBSystemInstance) return;
-            const tx = indexedDBSystemInstance.transaction('pdfVault', 'readwrite');
+        async function saveBookToVault(fileId, arrayBuffer) {
+            await initDB;
+            if(!localVault) return;
+            const tx = localVault.transaction('pdfVault', 'readwrite');
             const store = tx.objectStore('pdfVault');
             store.put({ id: fileId, data: arrayBuffer });
         }
 
-        // --- GATEWAY CONFIG ---
+        // --- GLOBAL DESKTOP STATE VARIABLES ---
         let TELEGRAM_BOT_TOKEN = sessionStorage.getItem('MY_BOT_TOKEN') || localStorage.getItem('MY_BOT_TOKEN');
         let TELEGRAM_CHAT_ID = sessionStorage.getItem('MY_CHAT_ID') || localStorage.getItem('MY_CHAT_ID');
+        
+        let cloudOS = { folders: [], files: [], last: null, bookmarks: [], history: [] };
+        let currentParentId = "root"; 
+        let movingBookId = null;
+        let isOnline = navigator.onLine;
 
-        function executeGatewayAuthentication() {
-            const pass = document.getElementById('gateway-passphrase').value;
-            if (pass.includes(':') && pass.length > 10) {
-                const pieces = pass.split('|');
-                TELEGRAM_BOT_TOKEN = pieces[0];
-                TELEGRAM_CHAT_ID = pieces[1];
-                sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
-                sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
-                try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
-                
-                document.getElementById('login-view').classList.remove('active-view');
-                document.getElementById('core-app-view').classList.add('active-view');
-                forceCloudDBSync();
+        const show = (id) => document.getElementById(id).style.display = 'flex';
+        const hide = (id) => document.getElementById(id).style.display = 'none';
+        function showOverlayElement(id) { show(id); }
+        function hideOverlayElement(id) { hide(id); }
+
+        function toggleAuthFormTab(tabName) {
+            document.getElementById('btn-tab-login').classList.remove('active');
+            document.getElementById('btn-tab-create').classList.remove('active');
+            document.getElementById('panel-login').classList.remove('active');
+            document.getElementById('panel-create').classList.remove('active');
+
+            if(tabName === 'login') {
+                document.getElementById('btn-tab-login').classList.add('active');
+                document.getElementById('panel-login').classList.add('active');
             } else {
-                alert("Invalid Authentication Access Token Format.");
+                document.getElementById('btn-tab-create').classList.add('active');
+                document.getElementById('panel-create').classList.add('active');
             }
         }
 
-        // Auto-bypass login view if tokens already reside securely in memory partitions
-        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-            document.addEventListener("DOMContentLoaded", () => {
-                document.getElementById('login-view').classList.remove('active-view');
-                document.getElementById('core-app-view').classList.add('active-view');
-                forceCloudDBSync();
-            });
+        // --- AUTHENTICATION INTERFACE LOGIC LOOPS ---
+        function executeAnonymousStorageOnboarding() {
+            const bot = document.getElementById('create-bot-token').value.trim();
+            const chat = document.getElementById('create-chat-id').value.trim();
+
+            if(!bot || !chat) { alert("Please populate all necessary validation markers."); return; }
+
+            TELEGRAM_BOT_TOKEN = bot;
+            TELEGRAM_CHAT_ID = chat;
+            sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
+            sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
+            try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
+
+            // Initialize anonymous workspace session interface
+            if(firebase.apps.length > 0) {
+                firebase.auth().signInAnonymously().then((credential) => {
+                    saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
+                }).catch(() => { proceedToApplicationWorkspace(); });
+            } else {
+                proceedToApplicationWorkspace();
+            }
         }
 
-        // --- ENGINE STRUCTURE VARIABLES ---
-        let cloudOS = { folders: [], files: [], last: null, bookmarks: [], history: [] };
-        let currentParentFolderId = "root";
-        let targetedRelocationAssetId = null;
-        let targetedRelocationAssetType = null;
-        let deviceConnectivityStatus = navigator.onLine;
-
-        window.addEventListener('online', () => { deviceConnectivityStatus = true; document.getElementById('connection-status-pill').innerText = "📡 Cloud Linked"; transmitMetadataPackageToCloud(); });
-        window.addEventListener('offline', () => { deviceConnectivityStatus = false; document.getElementById('connection-status-pill').innerText = "✈️ Vault Offline"; });
-
-        function showOverlayElement(id) { document.getElementById(id).style.display = 'flex'; }
-        function hideOverlayElement(id) { document.getElementById(id).style.display = 'none'; }
-        
-        function updateUIVolumeProgressTrack(percentage) {
-            const track = document.getElementById('loader-progress-track');
-            const fill = document.getElementById('loader-progress-fill');
-            if(percentage < 0) { track.style.display = 'none'; return; }
-            track.style.display = 'block';
-            fill.style.width = percentage + '%';
+        function executeDirectAPIPassportBypass() {
+            const bot = document.getElementById('direct-bot-token').value.trim();
+            const chat = document.getElementById('direct-chat-id').value.trim();
+            if(!bot || !chat) { alert("Credentials missing."); return; }
+            TELEGRAM_BOT_TOKEN = bot; TELEGRAM_CHAT_ID = chat;
+            sessionStorage.setItem('MY_BOT_TOKEN', bot); sessionStorage.setItem('MY_CHAT_ID', chat);
+            proceedToApplicationWorkspace();
         }
 
-        // --- DATA INTERFACE CORE LAYER ---
+        async function saveTelegramTargetDBCredentialsToFirestore(uid) {
+            try {
+                await firebase.firestore().collection('users').doc(uid).set({
+                    bot_token: TELEGRAM_BOT_TOKEN,
+                    chat_id: TELEGRAM_CHAT_ID,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch(e) { console.warn("Firestore structural link bypassed."); }
+            proceedToApplicationWorkspace();
+        }
+
+        function proceedToApplicationWorkspace() {
+            document.getElementById('login-view').classList.remove('active-view');
+            document.getElementById('core-app-view').classList.add('active-view');
+            navigateToSPASection('home');
+            forceCloudDBSync();
+        }
+
+        // --- FIRESTORE PROFILE CAPTURE PASSES ---
+        async function fetchCredentialsFromUserCloudProfile(uid) {
+            try {
+                const doc = await firebase.firestore().collection('users').doc(uid).get();
+                if(doc.exists && doc.data().bot_token) {
+                    const data = doc.data();
+                    TELEGRAM_BOT_TOKEN = data.bot_token;
+                    TELEGRAM_CHAT_ID = data.chat_id;
+                    sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
+                    sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
+                    return true;
+                }
+            } catch(e) {}
+            return false;
+        }
+
+        // --- CLOUD AUTHENTICATION ROUTINES ---
+        function executeGoogleOAuthPipeline() {
+            if(firebase.apps.length === 0) { alert("Firebase infrastructure parameters unconfigured."); return; }
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).then(async (result) => {
+                const active = await fetchCredentialsFromUserCloudProfile(result.user.uid);
+                if(active) { proceedToApplicationWorkspace(); } 
+                else {
+                    // Prompt link context values
+                    const token = prompt("Google account verified! Enter your existing Telegram Bot Token to link your files:");
+                    const id = prompt("Enter your Telegram Chat ID:");
+                    if(token && id) {
+                        TELEGRAM_BOT_TOKEN = token; TELEGRAM_CHAT_ID = id;
+                        await saveTelegramTargetDBCredentialsToFirestore(result.user.uid);
+                    } else { firebase.auth().signOut(); }
+                }
+            }).catch(err => alert("Google link interrupted: " + err.message));
+        }
+
+        function executeIdentityPassphraseLogin() {
+            if(firebase.apps.length === 0) { alert("Firebase unconfigured."); return; }
+            const id = document.getElementById('login-identifier').value.trim();
+            const pass = document.getElementById('login-password').value;
+
+            if(!id || !pass) { alert("Complete fields."); return; }
+            
+            const targetedEmailString = id.includes('@') ? id : `${id}@pdfreader.internal`;
+            
+            showOverlayElement('system-loader');
+            firebase.auth().signInWithEmailAndPassword(targetedEmailString, pass).then(async (res) => {
+                await fetchCredentialsFromUserCloudProfile(res.user.uid);
+                hideOverlayElement('system-loader');
+                proceedToApplicationWorkspace();
+            }).catch(err => { hideOverlayElement('system-loader'); alert("Identity cross check mismatch: " + err.message); });
+        }
+
+        function triggerPasswordResetRecovery() {
+            const email = prompt("Enter your account registration email address:");
+            if(!email) return;
+            firebase.auth().sendPasswordResetEmail(email).then(() => {
+                alert("Security optimization link transmitted successfully to target mailbox.");
+            }).catch(err => alert("Recovery fault: " + err.message));
+        }
+
+        // --- ACCOUNT SETTINGS CONTROL PACKETS (NEW) ---
+        function navigateToSPASection(targetSection) {
+            document.getElementById('subview-home').style.display = 'none';
+            document.getElementById('subview-manager').style.display = 'none';
+            document.getElementById('subview-settings').style.display = 'none';
+            
+            document.getElementById('nav-home').classList.remove('active');
+            document.getElementById('nav-manager').classList.remove('active');
+            document.getElementById('nav-settings').classList.remove('active');
+
+            if(targetSection === 'home') {
+                document.getElementById('subview-home').style.display = 'flex';
+                document.getElementById('nav-home').classList.add('add', 'active');
+                renderDashboardHomePlatform();
+            } else if (targetSection === 'manager') {
+                document.getElementById('subview-manager').style.display = 'flex';
+                document.getElementById('nav-manager').classList.add('active');
+                renderManagerFileSystemGrid();
+            } else if (targetSection === 'settings') {
+                document.getElementById('subview-settings').style.display = 'flex';
+                document.getElementById('nav-settings').classList.add('active');
+                refreshAccountSettingsPanelDataReadout();
+            }
+        }
+
+        function refreshAccountSettingsPanelDataReadout() {
+            const user = firebase.auth().currentUser;
+            if(!user) return;
+
+            // Analyze active credential trees linked
+            let methods = user.providerData.map(p => p.providerId);
+            let hasGoogle = methods.includes('google.com');
+            let hasEmail = methods.includes('password') && !user.email.endsWith('.internal');
+            let hasUserpass = methods.includes('password') && user.email.endsWith('.internal');
+
+            document.getElementById('meta-label-google').innerHTML = hasGoogle ? `<span class="badge-status badge-linked">Linked</span>` : `<span class="badge-status badge-unlinked">Isolated</span>`;
+            document.getElementById('meta-label-email').innerHTML = hasEmail ? `<span class="badge-status badge-linked">Linked</span>` : `<span class="badge-status badge-unlinked">Isolated</span>`;
+            document.getElementById('meta-label-userpass').innerHTML = hasUserpass ? `<span class="badge-status badge-linked">Active Profile</span>` : `<span class="badge-status badge-unlinked">Unconfigured</span>`;
+        }
+
+        function executeSettingsCredentialLink(providerType) {
+            const user = firebase.auth().currentUser;
+            if(!user) return;
+
+            if(providerType === 'google') {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                user.linkWithPopup(provider).then(() => { alert("Google accounts merged smoothly."); refreshAccountSettingsPanelDataReadout(); })
+                .catch(e => alert("Link rejected: " + e.message));
+            } else if (providerType === 'email') {
+                const targetEmail = prompt("Enter target verification email structure:");
+                const code = prompt("Enter a strong password to bind to this email:");
+                if(!targetEmail || !code) return;
+                
+                const credential = firebase.auth.EmailAuthProvider.credential(targetEmail, code);
+                user.linkWithCredential(credential).then(() => { alert("Identity verified and unified."); refreshAccountSettingsPanelDataReadout(); })
+                .catch(e => alert("Process aborted: " + e.message));
+            } else if (providerType === 'userpass') {
+                const userString = prompt("Enter custom secure alphanumeric alpha username:");
+                const code = prompt("Configure clean system login password string:");
+                if(!userString || !code) return;
+                
+                const virtualEmail = `${userString.trim()}@pdfreader.internal`;
+                const credential = firebase.auth.EmailAuthProvider.credential(virtualEmail, code);
+                user.linkWithCredential(credential).then(() => { alert("Username parameters mapped explicitly."); refreshAccountSettingsPanelDataReadout(); })
+                .catch(e => alert("Configuration fault: " + e.message));
+            }
+        }
+
+        function executeProfileSessionSignOut() {
+            sessionStorage.clear();
+            try { localStorage.clear(); } catch(e){}
+            if(firebase.apps.length > 0) firebase.auth().signOut();
+            window.location.reload();
+        }
+
+        // --- MONITOR DEBOUNCE TRACKS ---
+        function setProgress(percent) {
+            const container = document.getElementById('loader-progress-track');
+            const bar = document.getElementById('loader-progress-fill');
+            if (percent < 0) { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            bar.style.width = percent + '%';
+        }
+
+        // --- NETWORK MATRIX LISTENERS ---
+        window.addEventListener('online', () => { isOnline = true; document.getElementById('connection-status-pill').innerText = "📡 Cloud Linked"; transmitMetadataPackageToCloud(); });
+        window.addEventListener('offline', () => { isOnline = false; document.getElementById('connection-status-pill').innerText = "✈️ Vault Offline"; });
+
+        // --- TELEGRAM DB CORE INTERFACES ---
         async function transmitMetadataPackageToCloud() {
-            if(!deviceConnectivityStatus) return;
-            document.getElementById('connection-status-pill').innerText = "☁️ Backing up metadata...";
+            if(!isOnline) return;
             try {
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/unpinAllChatMessages?chat_id=${TELEGRAM_CHAT_ID}`);
-                const payloadStr = "[OS_DB]" + JSON.stringify(cloudOS);
-                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                const dbString = "[OS_DB]" + JSON.stringify(cloudOS);
+                const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: payloadStr, disable_notification: true })
+                    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: dbString, disable_notification: true })
                 });
-                const data = await response.json();
-                if(data.ok) {
+                const data = await res.json();
+                if (data.ok) {
                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/pinChatMessage?chat_id=${TELEGRAM_CHAT_ID}&message_id=${data.result.message_id}&disable_notification=true`);
                 }
-                document.getElementById('connection-status-pill').innerText = "✅ Cloud Synced";
-            } catch(e) { document.getElementById('connection-status-pill').innerText = "⚠️ Sync Interrupted"; }
+            } catch (err) {}
         }
 
         async function forceCloudDBSync() {
-            if(!deviceConnectivityStatus) {
-                document.getElementById('connection-status-pill').innerText = "✈️ Vault Offline";
-                renderManagerFileSystemGrid(); renderDashboardHomePlatform();
-                return;
-            }
+            if(!isOnline) { renderManagerFileSystemGrid(); renderDashboardHomePlatform(); return; }
             showOverlayElement('system-loader');
-            document.getElementById('loader-message-text').innerText = "Re-allocating system variables...";
-            updateUIVolumeProgressTrack(-1);
+            document.getElementById('loader-message-text').innerText = "Synchronizing global network branches...";
+            setProgress(-1);
             try {
                 const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat?chat_id=${TELEGRAM_CHAT_ID}`);
                 const data = await res.json();
@@ -422,755 +714,353 @@
                     cloudOS = JSON.parse(data.result.pinned_message.text.replace('[OS_DB]', ''));
                     if(!cloudOS.bookmarks) cloudOS.bookmarks = [];
                     if(!cloudOS.history) cloudOS.history = [];
-                    document.getElementById('connection-status-pill').innerText = "✅ Cloud Synced";
                 }
-            } catch(e) {}
-            renderManagerFileSystemGrid();
-            renderDashboardHomePlatform();
-            hideOverlayElement('system-loader');
+            } catch (err) {}
+            renderManagerFileSystemGrid(); renderDashboardHomePlatform(); hideOverlayElement('system-loader');
         }
 
-        // --- PLATFORM VIEW ROTATION ENGINE ---
-        function navigateToSPASection(targetSection) {
-            document.getElementById('subview-home').style.display = 'none';
-            document.getElementById('subview-manager').style.display = 'none';
-            document.getElementById('nav-home').classList.remove('active');
-            document.getElementById('nav-manager').classList.remove('active');
-
-            if(targetSection === 'home') {
-                document.getElementById('subview-home').style.display = 'flex';
-                document.getElementById('nav-home').classList.add('active');
-                renderDashboardHomePlatform();
-            } else if (targetSection === 'manager') {
-                document.getElementById('subview-manager').style.display = 'flex';
-                document.getElementById('nav-manager').classList.add('active');
-                renderManagerFileSystemGrid();
-            }
-        }
-
-        // --- DASHBOARD CORE LOGIC ---
-        function renderDashboardHomePlatform() {
-            const grid = document.getElementById('dashboard-recent-grid');
-            grid.innerHTML = '';
-
-            if (cloudOS.last && cloudOS.last.id) {
-                document.getElementById('quick-resume-title-node').innerText = `${cloudOS.last.name} (Page ${cloudOS.last.page || 1})`;
-                document.getElementById('dashboard-continue-banner').style.display = 'flex';
-            } else {
-                document.getElementById('dashboard-continue-banner').style.display = 'none';
-            }
-
-            // Extract the history elements or display a default state fallback
-            const historyElements = cloudOS.history || [];
-            if(historyElements.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 40px 0;">No recently opened documents on record.</p>`;
-                return;
-            }
-
-            // Display up to 4 elements sequentially on the dashboard shelf
-            [...historyElements].reverse().slice(0, 4).forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'book-card';
-                card.innerHTML = `
-                    <div class="card-body" onclick="initializePDFReaderViewport('${item.id}', '${item.name.replace(/'/g, "\\'")}')">
-                        <div class="card-icon">📄</div>
-                        <div class="card-title">${item.name}</div>
-                        <div class="card-meta">Opened recently</div>
-                    </div>`;
-                grid.appendChild(card);
-            });
-        }
-
-        function triggerRecentResume() {
-            if(cloudOS.last && cloudOS.last.id) {
-                initializePDFReaderViewport(cloudOS.last.id, cloudOS.last.name);
-            }
-        }
-
-        // --- BOOK MANAGER CORE LOGIC ---
-        function resolveBreadcrumbHierarchy(folderId) {
-            if (folderId === "root") return [{id: "root", name: "My Drive"}];
-            const found = cloudOS.folders.find(f => f.id === folderId);
-            if (!found) return [{id: "root", name: "My Drive"}];
-            return [...resolveBreadcrumbHierarchy(found.parentId), {id: found.id, name: found.name}];
-        }
-
-        function executeCatalogFiltering() {
-            const query = document.getElementById('manager-search-field').value.toLowerCase();
-            const cards = document.querySelectorAll('#manager-file-system-grid .book-card');
-            cards.forEach(card => {
-                const text = card.querySelector('.card-title').innerText.toLowerCase();
-                card.style.display = text.includes(query) ? 'flex' : 'none';
-            });
-        }
-
+        // --- FILE MANAGER UI & ACCELERATED DETECTIONS ---
         function detectSequentialSplitNamingPatterns() {
-            const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentFolderId);
+            const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
             const patterns = [/_part\d+/i, /-part\d+/i, /_vol\d+/i, /-vol\d+/i, /part_\d+/i, /vol_\d+/i];
             let detectionTriggered = false;
-            
             for(let file of internalFiles) {
-                if(patterns.some(p => p.test(file.name))) {
-                    detectionTriggered = true;
-                    break;
-                }
+                if(patterns.some(p => p.test(file.name))) { detectionTriggered = true; break; }
             }
             document.getElementById('virtual-binder-accelerator').style.display = detectionTriggered ? 'flex' : 'none';
         }
 
-        function renderManagerFileSystemGrid() {
-            const grid = document.getElementById('manager-file-system-grid');
-            grid.innerHTML = '';
-            document.getElementById('manager-search-field').value = "";
+        function filterGrid() {
+            const query = document.getElementById('fm-search').value.toLowerCase();
+            document.querySelectorAll('#manager-file-system-grid .book-card').forEach(card => {
+                const title = card.querySelector('.card-title').innerText.toLowerCase();
+                card.style.display = title.includes(query) ? 'flex' : 'none';
+            });
+        }
 
+        function renderDashboardHomePlatform() {
+            const grid = document.getElementById('dashboard-recent-grid'); grid.innerHTML = '';
+            if (cloudOS.last && cloudOS.last.id) {
+                document.getElementById('quick-resume-title-node').innerText = `${cloudOS.last.name} (Page ${cloudOS.last.page || 1})`;
+                document.getElementById('dashboard-continue-banner').style.display = 'flex';
+            } else { document.getElementById('dashboard-continue-banner').style.display = 'none'; }
+            const historyElements = cloudOS.history || [];
+            if(historyElements.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 40px 0;">No active book logs found.</p>`; return;
+            }
+            [...historyElements].reverse().slice(0, 4).forEach(item => {
+                const card = document.createElement('div'); card.className = 'book-card';
+                card.innerHTML = `
+                    <div class="card-body" onclick="initializePDFReaderViewport('${item.id}', '${item.name.replace(/'/g, "\\'")}')">
+                        <div class="card-icon">📄</div><div class="card-title">${item.name}</div>
+                        <div class="card-meta">Recent Session Asset</div>
+                    </div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderManagerFileSystemGrid() {
+            const grid = document.getElementById('manager-file-system-grid'); grid.innerHTML = '';
             detectSequentialSplitNamingPatterns();
 
-            // Handle breadcrumb compilation
-            const crumbs = resolveBreadcrumbHierarchy(currentParentFolderId);
-            const container = document.getElementById('manager-breadcrumbs-node');
-            container.innerHTML = '';
-            crumbs.forEach((c, index) => {
-                const node = document.createElement('span');
-                node.className = 'crumb-item';
-                node.innerText = c.name;
-                node.onclick = () => { currentParentFolderId = c.id; renderManagerFileSystemGrid(); };
-                container.appendChild(node);
-                if(index < crumbs.length - 1) {
-                    const separator = document.createElement('span');
-                    separator.innerText = " / ";
-                    separator.style.color = "var(--text-muted)";
-                    container.appendChild(separator);
+            const crumbs = resolveBreadcrumbHierarchy(currentParentId);
+            const crumbContainer = document.getElementById('breadcrumbs'); crumbContainer.innerHTML = '';
+            crumbs.forEach((crumb, index) => {
+                const link = document.createElement('span'); link.className = 'crumb-link'; link.innerText = crumb.name;
+                link.onclick = () => { currentParentId = crumb.id; renderManagerFileSystemGrid(); };
+                crumbContainer.appendChild(link);
+                if (index < crumbs.length - 1) {
+                    const sep = document.createElement('span'); sep.className = 'crumb-sep'; sep.innerText = ' / ';
+                    crumbContainer.appendChild(sep);
                 }
             });
 
-            let displayFolders = cloudOS.folders.filter(f => f.parentId === currentParentFolderId);
-            let displayFiles = cloudOS.files.filter(f => f.parentId === currentParentFolderId);
+            let activeFolders = cloudOS.folders.filter(f => f.parentId === currentParentId);
+            let activeFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
 
-            // Interface with the Sorting dropdown Engine
             const sortingParam = document.getElementById('manager-sort-engine').value;
-            
             if(sortingParam.startsWith('name')) {
-                displayFolders.sort((a,b) => a.name.localeCompare(b.name));
-                displayFiles.sort((a,b) => a.name.localeCompare(b.name));
-                if(sortingParam.endsWith('desc')) {
-                    displayFolders.reverse();
-                    displayFiles.reverse();
-                }
+                activeFolders.sort((a,b) => a.name.localeCompare(b.name)); activeFiles.sort((a,b) => a.name.localeCompare(b.name));
+                if(sortingParam.endsWith('desc')) { activeFolders.reverse(); activeFiles.reverse(); }
             } else if (sortingParam.startsWith('date')) {
-                // Approximate fallback timestamp checks
-                displayFolders.sort((a,b) => (b.id.split('_')[1] || 0) - (a.id.split('_')[1] || 0));
-                displayFiles.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
-                if(sortingParam.endsWith('asc')) {
-                    displayFolders.reverse();
-                    displayFiles.reverse();
-                }
+                activeFolders.sort((a,b) => (b.id.split('_')[1] || 0) - (a.id.split('_')[1] || 0));
+                activeFiles.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+                if(sortingParam.endsWith('asc')) { activeFolders.reverse(); activeFiles.reverse(); }
             } else if (sortingParam.startsWith('size')) {
-                displayFiles.sort((a,b) => parseFloat(a.size) - parseFloat(b.size));
-                if(sortingParam.endsWith('desc')) displayFiles.reverse();
+                activeFiles.sort((a,b) => parseFloat(a.size) - parseFloat(b.size));
+                if(sortingParam.endsWith('desc')) activeFiles.reverse();
             }
 
-            if(displayFolders.length === 0 && displayFiles.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 60px 0;">Empty structural branch context.</p>`;
-                return;
+            if (activeFolders.length === 0 && activeFiles.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; color:#888; text-align: center; margin-top: 50px;">This structural matrix node branch is completely clear.</p>`; return;
             }
 
-            displayFolders.forEach(folder => {
-                const card = document.createElement('div');
-                card.className = 'book-card folder-card';
+            activeFolders.forEach(folder => {
+                const card = document.createElement('div'); card.className = 'book-card folder-card';
                 card.innerHTML = `
-                    <div class="card-body" onclick="shiftActiveWorkingDirectory('${folder.id}')">
-                        <div class="card-icon">📁</div>
-                        <div class="card-title">${folder.name}</div>
-                    </div>
+                    <div class="card-body" onclick="openFolder('${folder.id}')"><div class="book-icon">📁</div><div class="book-title">${folder.name}</div></div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button onclick="triggerAssetRenaming('${folder.id}', 'folder')">✏️</button>
-                        <button onclick="initializeRelocationModal('${folder.id}', 'folder')">⮀</button>
-                        <button onclick="executeAssetPurge('${folder.id}', 'folder')">🗑️</button>
+                        <button onclick="renameFolder('${folder.id}')">✏️</button>
+                        <button onclick="openMoveModal('${folder.id}', 'folder')">⮀</button>
+                        <button class="del" onclick="deleteFolder('${folder.id}')">🗑️</button>
                     </div>`;
                 grid.appendChild(card);
             });
 
-            displayFiles.forEach(file => {
-                const isMarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
-                const badge = isMarked ? `<div style="position:absolute; top:12px; left:12px; z-index:2; font-size:16px;">🔖</div>` : '';
-                
-                const card = document.createElement('div');
-                card.className = 'book-card';
+            [...activeFiles].reverse().forEach(file => {
+                const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
+                const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:20px; z-index:2;">🔖</div>` : '';
+                const card = document.createElement('div'); card.className = 'book-card';
                 card.innerHTML = `
-                    ${badge}
+                    ${markHtml}
                     <div class="card-body" onclick="initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
-                        <div class="card-icon">📄</div>
-                        <div class="card-title">${file.name}</div>
-                        <div class="card-meta">${file.size || "Unknown Size"}</div>
+                        <div class="book-icon">📄</div><div class="book-title">${file.name}</div><div class="book-meta">${file.size}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button onclick="triggerAssetRenaming('${file.id}', 'file')">✏️</button>
-                        <button onclick="initializeRelocationModal('${file.id}', 'file')">⮀</button>
-                        <button onclick="executeAssetPurge('${file.id}', 'file')">🗑️</button>
+                        <button onclick="renameFile('${file.id}')">✏️</button>
+                        <button onclick="openMoveModal('${file.id}', 'file')">⮀</button>
+                        <button class="del" onclick="deleteFile('${file.id}')">🗑️</button>
                     </div>`;
                 grid.appendChild(card);
             });
         }
 
-        function shiftActiveWorkingDirectory(id) { currentParentFolderId = id; renderManagerFileSystemGrid(); }
+        function openFolder(folderId) { currentParentId = folderId; renderManagerFileSystemGrid(); }
+        function triggerRecentResume() { if(cloudOS.last && cloudOS.last.id) initializePDFReaderViewport(cloudOS.last.id, cloudOS.last.name); }
 
-        // --- ASSET MODIFICATION CONTROLLERS ---
-        function triggerFolderCreationSequence() {
-            const segmentName = prompt("Enter distinct folder designation:");
-            if(!segmentName || segmentName.trim() === "") return;
-            cloudOS.folders.push({ id: 'folder_' + Date.now(), name: segmentName.trim(), parentId: currentParentFolderId });
-            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
-        }
-
-        function triggerAssetRenaming(id, type) {
-            if(type === 'file') {
-                const match = cloudOS.files.find(f => f.id === id);
-                if(!match) return;
-                const update = prompt("Enter modified parameter label:", match.name);
-                if(update && update.trim() !== "") { match.name = update.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
-            } else {
-                const match = cloudOS.folders.find(f => f.id === id);
-                if(!match) return;
-                const update = prompt("Enter modified parameter label:", match.name);
-                if(update && update.trim() !== "") { match.name = update.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
-            }
-        }
-
-        function executeAssetPurge(id, type) {
-            if(!confirm(`Verify absolute structural extraction command for this ${type}?`)) return;
-            if(type === 'file') {
-                cloudOS.files = cloudOS.files.filter(f => f.id !== id);
-                if(cloudOS.last && cloudOS.last.id === id) cloudOS.last = null;
-                if(cloudOS.history) cloudOS.history = cloudOS.history.filter(h => h.id !== id);
-                cloudOS.bookmarks = cloudOS.bookmarks.filter(b => b.fileId !== id);
-            } else {
-                let collection = [id]; let checkProgress = true;
-                while(checkProgress) {
-                    checkProgress = false;
-                    cloudOS.folders.forEach(f => {
-                        if(collection.includes(f.parentId) && !collection.includes(f.id)) { collection.push(f.id); checkProgress = true; }
-                    });
-                }
-                cloudOS.folders = cloudOS.folders.filter(f => !collection.includes(f.id));
-                cloudOS.files = cloudOS.files.filter(f => !collection.includes(f.parentId));
-            }
-            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
-        }
-
-        function initializeRelocationModal(id, type) {
-            targetedRelocationAssetId = id; targetedRelocationAssetType = type;
-            const tree = document.getElementById('interactive-folder-tree');
-            tree.innerHTML = `<div class="folder-list-item" style="padding:10px; cursor:pointer; border-bottom:1px solid var(--border-color);" onclick="executeAssetRelocationMove('root')">🏠 Base Drive Directory</div>`;
-            
-            cloudOS.folders.forEach(f => {
-                if(type === 'folder' && f.id === id) return;
-                tree.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer; border-bottom:1px solid var(--border-color);" onclick="executeAssetRelocationMove('${f.id}')">📁 ${f.name}</div>`;
-            });
+        // --- CORE FILE/FOLDER OPERATIONS ---
+        function renameFile(id) { const file = cloudOS.files.find(f => f.id === id); if (!file) return; const newName = prompt("Enter modification labeling metrics:", file.name); if (newName && newName.trim() !== "") { file.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
+        function renameFolder(id) { const folder = cloudOS.folders.find(f => f.id === id); if (!folder) return; const newName = prompt("Enter modification labeling metrics:", folder.name); if (newName && newName.trim() !== "") { folder.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
+        function deleteFile(fileId) { if(!confirm("Purge file completely?")) return; cloudOS.files = cloudOS.files.filter(f => f.id !== fileId); if (cloudOS.last && cloudOS.last.id === fileId) cloudOS.last = null; cloudOS.bookmarks = cloudOS.bookmarks.filter(b => b.fileId !== fileId); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
+        function deleteFolder(folderId) { if(!confirm("Purge all lower directory context assets recursively?")) return; let idsToDelete = [folderId]; let foundNew = true; while(foundNew) { foundNew = false; cloudOS.folders.forEach(f => { if (idsToDelete.includes(f.parentId) && !idsToDelete.includes(f.id)) { idsToDelete.push(f.id); foundNew = true; } }); } cloudOS.folders = cloudOS.folders.filter(f => !idsToDelete.includes(f.id)); cloudOS.files = cloudOS.files.filter(f => !idsToDelete.includes(f.parentId)); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
+        function createNewFolder() { const name = prompt("Enter designator:"); if (!name) return; cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name, parentId: currentParentId }); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
+        
+        function openMoveModal(id, type) {
+            movingBookId = id; movingType = type; const list = document.getElementById('folder-list');
+            list.innerHTML = `<div class="folder-list-item" onclick="moveTo('root')">🏠 Base Drive Directory</div>`;
+            cloudOS.folders.forEach(f => { if (type === 'folder' && f.id === id) return; list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${f.id}')">📁 ${f.name}</div>`; });
             showOverlayElement('move-structural-modal');
         }
-
-        function executeAssetRelocationMove(targetId) {
-            if(targetedRelocationAssetType === 'file') {
-                const obj = cloudOS.files.find(f => f.id === targetedRelocationAssetId);
-                if(obj) obj.parentId = targetId;
-            } else {
-                const obj = cloudOS.folders.find(f => f.id === targetedRelocationAssetId);
-                if(obj) obj.parentId = targetId;
-            }
+        function moveTo(targetFolderId) { 
+            if (movingType === 'file') { const file = cloudOS.files.find(f => f.id === movingBookId); if (file) file.parentId = targetFolderId; } 
+            else { const folder = cloudOS.folders.find(f => f.id === movingBookId); if (folder) folder.parentId = targetFolderId; }
             transmitMetadataPackageToCloud(); hideOverlayElement('move-structural-modal'); renderManagerFileSystemGrid();
         }
 
-        // --- NAME BASED AUTO-MERGE VIRTUAL PIPELINE ---
+        // --- NAME-BASED STRUCTURAL VIRTUAL CELL MERGER ENGINE ---
         function triggerVirtualBinderAssembly() {
-            const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentFolderId);
-            // Sort files logically to align sequences safely (Part 1, Part 2...)
-            internalFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-
-            const componentsListMessage = internalFiles.map((f, i) => `${i+1}. ${f.name}`).join('\n');
-            if(!confirm(`Detected file segments will be linked sequentially into a continuous virtual reading canvas:\n\n${componentsListMessage}\n\nProceed with compilation?`)) return;
-
-            // Generate virtual package descriptor packet
-            const consolidatedName = internalFiles[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Consolidated Collection";
+            const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
+            segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            const mapStr = segments.map((f, i) => `${i+1}. ${f.name}`).join('\n');
+            if(!confirm(`Bind following chunks sequentially into a Virtual Continuous Canvas Bundle?\n\n${mapStr}`)) return;
+            const compoundLabel = segments[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Virtual Anthology";
+            const compoundId = "virtual_" + Date.now();
             
-            // Create a compound payload key array sequence 
-            const virtualFileId = "virtual_" + Date.now();
-            const sequenceIds = internalFiles.map(f => f.id);
-
-            // Add virtual node object maps directly to memory system architecture
             cloudOS.files.push({
-                id: virtualFileId,
-                name: `📦 [Virtual Book] ${consolidatedName}.pdf`,
-                size: "~ Composite Document",
-                parentId: currentParentFolderId,
-                isVirtualCompound: true,
-                compositionSequence: sequenceIds,
-                timestamp: Date.now()
+                id: compoundId, name: `📦 [Virtual Binder] ${compoundLabel}.pdf`, size: "~ Combined Book Pack",
+                parentId: currentParentId, isVirtualCompound: true, compositionSequence: segments.map(f => f.id), timestamp: Date.now()
             });
-
-            transmitMetadataPackageToCloud();
-            renderManagerFileSystemGrid();
+            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
         }
 
-        // --- MULTI-VOLUME INTEGRATED BINARY READER PIPELINE ---
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-        
-        let globalCompoundDocumentLayoutMap = []; 
-        let activeViewportScaleValue = 1.0;
-        let baseLayoutContainerWidth = 850;
-        let instantiatedIntersectObserver = null;
-        let runtimeRenderedPageTrackingSet = new Set();
-        let readerActiveFileContextId = null;
-        let currentViewportTrackingPageIndex = 1;
-
-        async function initializePDFReaderViewport(fileId, documentLabel) {
-            showOverlayElement('system-loader');
-            document.getElementById('loader-message-text').innerText = "Mounting document structure...";
-            updateUIVolumeProgressTrack(0);
-
-            // Clear layout memory maps cleanly
-            globalCompoundDocumentLayoutMap = [];
-            runtimeRenderedPageTrackingSet.clear();
-            readerActiveFileContextId = fileId;
-            activeViewportScaleValue = 1.0;
-            
-            document.getElementById('continuous-pages-stack').innerHTML = '';
-            if(instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect();
-
-            // Store history entry record tracking metrics
-            if(!cloudOS.history) cloudOS.history = [];
-            cloudOS.history = cloudOS.history.filter(h => h.id !== fileId);
-            cloudOS.history.push({ id: fileId, name: documentLabel, timestamp: Date.now() });
-
-            if(!cloudOS.last) cloudOS.last = {};
-            cloudOS.last.id = fileId; cloudOS.last.name = documentLabel;
-            transmitMetadataPackageToCloud();
-
-            try {
-                const targetNode = cloudOS.files.find(f => f.id === fileId);
-                
-                if(targetNode && targetNode.isVirtualCompound) {
-                    // --- FLOW A: COMPOUND INTERPOLATION ROUTE ---
-                    let sequence = targetNode.compositionSequence;
-                    let calculatedGlobalIndexOffset = 0;
-
-                    for(let i=0; i < sequence.length; i++) {
-                        const segmentId = sequence[i];
-                        const segmentMeta = cloudOS.files.find(f => f.id === segmentId);
-                        const labelText = segmentMeta ? segmentMeta.name : `Volume Chunk ${i+1}`;
-                        
-                        document.getElementById('loader-message-text').innerText = `Extracting node channel ${i+1}/${sequence.length}...`;
-                        let rawBuffer = await fetchTargetBinaryBufferBytes(segmentId);
-                        let docInstance = await pdfjsLib.getDocument({ data: new Uint8Array(rawBuffer) }).promise;
-                        
-                        globalCompoundDocumentLayoutMap.push({
-                            type: 'physical_node',
-                            fileId: segmentId,
-                            pdfDocInstance: docInstance,
-                            pageCount: docInstance.numPages,
-                            globalIndexStartOffset: calculatedGlobalIndexOffset
-                        });
-                        calculatedGlobalIndexOffset += docInstance.numPages;
-                    }
-                } else {
-                    // --- FLOW B: STANDARD MONOLITHIC ROUTE ---
-                    let rawBuffer = await fetchTargetBinaryBufferBytes(fileId);
-                    let docInstance = await pdfjsLib.getDocument({ data: new Uint8Array(rawBuffer) }).promise;
-                    
-                    globalCompoundDocumentLayoutMap.push({
-                        type: 'physical_node',
-                        fileId: fileId,
-                        pdfDocInstance: docInstance,
-                        pageCount: docInstance.numPages,
-                        globalIndexStartOffset: 0
-                    });
-                }
-
-                // Compile Layout Metric Parameters
-                let totalCombinedPages = globalCompoundDocumentLayoutMap.reduce((acc, current) => acc + current.pageCount, 0);
-                document.getElementById('reader-total-page-count').innerText = totalCombinedPages;
-                document.getElementById('reader-active-document-title').innerText = documentLabel;
-
-                document.getElementById('core-app-view').style.display = 'none';
-                document.getElementById('reader-view').style.display = 'flex';
-
-                await buildLazyContinuousDOMStructure();
-                jumpToSavedPageIndexContext();
-                evaluateContextBookmarkUIVisuals();
-                hideOverlayElement('system-loader');
-
-            } catch(e) {
-                alert("Runtime Failure: Verification mismatch during decryption pass. File trace corrupted.");
-                hideOverlayElement('system-loader');
-                terminateReaderSession();
-            }
-        }
-
-        async function fetchTargetBinaryBufferBytes(fileId) {
-            let buffer = await pullBinaryBufferFromDiskVault(fileId);
-            if(buffer) return buffer;
-
-            if(!deviceConnectivityStatus) throw new Error("Connection failed.");
-
-            const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-            const pathData = await pathRes.json();
-            if (!pathData.ok) throw new Error("Metadata check rejected.");
-
-            const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
-            const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
-            
-            const task = pdfjsLib.getDocument({ url: proxyUrl });
-            task.onProgress = (p) => {
-                if(p.total > 0) {
-                    const progressInt = Math.round((p.loaded / p.total) * 100);
-                    updateUIVolumeProgressTrack(progressInt);
-                    document.getElementById('loader-message-text').innerText = `Syncing block partition to flash drive... ${progressInt}%`;
-                }
-            };
-
-            const doc = await task.promise;
-            const dataObj = await doc.getData();
-            await saveBinaryBufferToDiskVault(fileId, dataObj.buffer);
-            await doc.destroy();
-            return dataObj.buffer;
-        }
-
-        async function buildLazyContinuousDOMStructure() {
-            const viewport = document.getElementById('viewport-canvas-container');
-            const targetContainerStack = document.getElementById('continuous-pages-stack');
-            const vWidth = viewport.clientWidth;
-            
-            baseLayoutContainerWidth = vWidth < 650 ? (vWidth - 24) : 820;
-
-            // Probe dimensions using the primary sequence node
-            const primaryNode = globalCompoundDocumentLayoutMap[0];
-            const samplePage = await primaryNode.pdfDocInstance.getPage(1);
-            const sampleViewport = samplePage.getViewport({ scale: 1.0 });
-            const layoutHeightToWidthRatio = sampleViewport.height / sampleViewport.width;
-
-            let processingGlobalPageIndex = 1;
-
-            globalCompoundDocumentLayoutMap.forEach((block) => {
-                for(let p = 1; p <= block.pageCount; p++) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'pdf-page-wrapper';
-                    wrapper.id = `virtual-page-node-${processingGlobalPageIndex}`;
-                    wrapper.dataset.globalIndex = processingGlobalPageIndex;
-                    wrapper.dataset.internalPageNum = p;
-                    wrapper.dataset.sourceFileId = block.fileId;
-                    
-                    wrapper.style.width = `${baseLayoutContainerWidth}px`;
-                    wrapper.style.height = `${(baseLayoutContainerWidth * layoutHeightToWidthRatio)}px`;
-                    wrapper.innerText = `Caching layout layer block... [Page ${processingGlobalPageIndex}]`;
-                    
-                    targetContainerStack.appendChild(wrapper);
-                    processingGlobalPageIndex++;
-                }
-            });
-
-            instantiatedIntersectObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if(entry.isIntersecting) {
-                        const gIdx = parseInt(entry.target.dataset.globalIndex);
-                        if(!runtimeRenderedPageTrackingSet.has(gIdx)) renderTargetPageCanvasElement(gIdx, entry.target);
-                    }
-                });
-            }, { root: viewport, rootMargin: '1200px 0px' });
-
-            document.querySelectorAll('.pdf-page-wrapper').forEach(node => instantiatedIntersectObserver.observe(node));
-        }
-
-        async function renderTargetPageCanvasElement(globalIndex, elementWrapper) {
-            runtimeRenderedPageTrackingSet.add(globalIndex);
-            elementWrapper.innerText = '';
-
-            const internalPageNum = parseInt(elementWrapper.dataset.internalPageNum);
-            const sourceFileId = elementWrapper.dataset.sourceFileId;
-            const blockContext = globalCompoundDocumentLayoutMap.find(b => b.fileId === sourceFileId);
-
-            const page = await blockContext.pdfDocInstance.getPage(internalPageNum);
-            const dpr = window.devicePixelRatio || 1;
-            const nativeViewport = page.getViewport({ scale: 1.0 });
-            
-            const localRatio = nativeViewport.height / nativeViewport.width;
-            elementWrapper.style.height = `${(baseLayoutContainerWidth * localRatio)}px`;
-
-            const cssScaleModifier = baseLayoutContainerWidth / nativeViewport.width;
-            const renderViewportContext = page.getViewport({ scale: cssScaleModifier * dpr });
-            const textDisplayViewportContext = page.getViewport({ scale: cssScaleModifier });
-
-            const canvas = document.createElement('canvas');
-            canvas.className = 'pdf-page-canvas';
-            canvas.width = renderViewportContext.width;
-            canvas.height = renderViewportContext.height;
-            elementWrapper.appendChild(canvas);
-
-            const textDiv = document.createElement('div');
-            textDiv.className = 'text-layer';
-            elementWrapper.appendChild(textDiv);
-
-            const ctx = canvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: renderViewportContext }).promise;
-
-            // Render selectable layout text metrics asynchronously
-            try {
-                const textContent = await page.getTextContent();
-                textContent.items.forEach(item => {
-                    const matrixTransform = pdfjsLib.Util.transform(textDisplayViewportContext.transform, item.transform);
-                    const calcHeight = Math.sqrt((matrixTransform[2] * matrixTransform[2]) + (matrixTransform[3] * matrixTransform[3]));
-                    const span = document.createElement('span');
-                    span.textContent = item.str;
-                    span.style.left = `${matrixTransform[4]}px`;
-                    span.style.top = `${matrixTransform[5] - calcHeight}px`;
-                    span.style.fontSize = `${calcHeight}px`;
-                    span.style.fontFamily = item.fontName;
-                    textDiv.appendChild(span);
-                });
-            } catch(err) {}
-        }
-
-        function executeViewportZoomModification(amount) {
-            activeViewportScaleValue += amount;
-            if(activeViewportScaleValue < 0.4) activeViewportScaleValue = 0.4;
-            if(activeViewportScaleValue > 2.6) activeViewportScaleValue = 2.6;
-            
-            const scaler = document.getElementById('zoom-scaler-node');
-            scaler.style.transform = `scale(${activeViewportScaleValue})`;
-            
-            const view = document.getElementById('viewport-canvas-container');
-            view.scrollBy(0,1); view.scrollBy(0,-1);
-        }
-
-        // --- GLOBAL STREAM OVERLAY IN-FILE TEXT SCANNER ---
-        async function executeInFileSearchQuery() {
-            const query = document.getElementById('reader-in-file-search-field').value.toLowerCase().trim();
-            if(!query) return;
-
-            document.querySelectorAll('.text-layer mark').forEach(mark => {
-                const p = mark.parentNode; p.replaceChild(document.createTextNode(mark.textContent), mark); p.normalize();
-            });
-
-            let targetMatchedGlobalIndex = null;
-            let currentGlobalPageCounter = 1;
-
-            for(let block of globalCompoundDocumentLayoutMap) {
-                for(let p = 1; p <= block.pageCount; p++) {
-                    const page = await block.pdfDocInstance.getPage(p);
-                    const textData = await page.getTextContent();
-                    const textString = textData.items.map(i => i.str).join(' ').toLowerCase();
-
-                    if(textString.includes(query)) {
-                        if(!targetMatchedGlobalIndex) targetMatchedGlobalIndex = currentGlobalPageCounter;
-                        
-                        const elementWrapper = document.getElementById(`virtual-page-node-${currentGlobalPageCounter}`);
-                        if(!runtimeRenderedPageTrackingSet.has(currentGlobalPageCounter)) {
-                            await renderTargetPageCanvasElement(currentGlobalPageCounter, elementWrapper);
-                        }
-
-                        elementWrapper.querySelectorAll('.text-layer span').forEach(span => {
-                            if(span.textContent.toLowerCase().includes(query)) {
-                                const regex = new RegExp(`(${query})`, 'gi');
-                                span.innerHTML = span.textContent.replace(regex, `<mark>$1</mark>`);
-                            }
-                        });
-                    }
-                    currentGlobalPageCounter++;
-                }
-            }
-
-            if(targetMatchedGlobalIndex) {
-                const targetNode = document.getElementById(`virtual-page-node-${targetMatchedGlobalIndex}`);
-                document.getElementById('viewport-canvas-container').scrollTo({
-                    top: targetNode.offsetTop * activeViewportScaleValue, behavior: 'smooth'
-                });
-            } else {
-                alert("Query sequence matching criteria undetected.");
-            }
-        }
-
-        // --- VIEWPORT SCROLL MONITOR AND META SYNC ---
-        document.getElementById('viewport-canvas-container').addEventListener('scroll', () => {
-            const wrappers = document.querySelectorAll('.pdf-page-wrapper');
-            let detectedIndex = 1;
-            const midMarker = window.innerHeight / 2;
-
-            wrappers.forEach((el, index) => {
-                const bounds = el.getBoundingClientRect();
-                if(bounds.top <= midMarker && bounds.bottom >= midMarker) {
-                    detectedIndex = index + 1;
-                }
-            });
-
-            if(detectedIndex !== currentViewportTrackingPageIndex) {
-                currentViewportTrackingPageIndex = detectedIndex;
-                document.getElementById('reader-current-page-indicator').innerText = detectedIndex;
-                evaluateContextBookmarkUIVisuals();
-
-                clearTimeout(window.saveStateLatencyDebounceTimeout);
-                window.saveStateLatencyDebounceTimeout = setTimeout(() => {
-                    if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) {
-                        cloudOS.last.page = detectedIndex;
-                        transmitMetadataPackageToCloud();
-                    }
-                }, 1200);
-            }
-        });
-
-        function jumpToSavedPageIndexContext() {
-            if (cloudOS.last && cloudOS.last.id === readerActiveFileContextId && cloudOS.last.page) {
-                setTimeout(() => {
-                    const targetNode = document.getElementById(`virtual-page-node-${cloudOS.last.page}`);
-                    if(targetNode) {
-                        document.getElementById('viewport-canvas-container').scrollTo({
-                            top: targetNode.offsetTop * activeViewportScaleValue, behavior: 'auto'
-                        });
-                    }
-                }, 400);
-            }
-        }
-
-        // --- BOOKMARK SYSTEMS CONTROLLER ---
-        function togglePageBookmarkState() {
-            const matchIndex = cloudOS.bookmarks.findIndex(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex);
-            if(matchIndex >= 0) {
-                cloudOS.bookmarks.splice(matchIndex, 1);
-            } else {
-                cloudOS.bookmarks.push({ fileId: readerActiveFileContextId, page: currentViewportTrackingPageIndex });
-            }
-            evaluateContextBookmarkUIVisuals(); transmitMetadataPackageToCloud();
-        }
-
-        function evaluateContextBookmarkUIVisuals() {
-            const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex);
-            const node = document.getElementById('reader-bookmark-toggle-node');
-            if(isBookmarked) node.classList.add('active-state');
-            else node.classList.remove('active-state');
-        }
-
-        function toggleImmersiveReadingMode() {
-            const view = document.getElementById('reader-view');
-            view.classList.toggle('immersive-mode');
-        }
-
-        async function terminateReaderSession() {
-            document.getElementById('reader-view').style.display = 'none';
-            document.getElementById('core-app-view').style.display = 'flex';
-            
-            globalCompoundDocumentLayoutMap.forEach(async (block) => {
-                try { await block.pdfDocInstance.destroy(); } catch(e){}
-            });
-            globalCompoundDocumentLayoutMap = [];
-            runtimeRenderedPageTrackingSet.clear();
-            
-            if(document.getElementById('reader-view').classList.contains('immersive-mode')) {
-                toggleImmersiveReadingMode();
-            }
-            renderManagerFileSystemGrid();
-            renderDashboardHomePlatform();
-        }
-
-        // --- XHR STRUCTURAL DATA STREAM UPLOADER ---
-        function executeUploadPipelineWithProgressMonitor(formData) {
+        // --- BUFFER TRANSLATION STREAM CHANNELS ---
+        function uploadWithProgress(formData) {
             return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`);
-                xhr.upload.onprogress = e => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        updateUIVolumeProgressTrack(percent);
-                        document.getElementById('loader-message-text').innerText = `Pushing segment block to server data bank... ${percent}%`;
-                    }
-                };
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
-                    else reject(new Error("Network terminal communication exception."));
-                };
-                xhr.onerror = () => reject(new Error("Critical terminal transmission network failure."));
-                xhr.send(formData);
+                const xhr = new XMLHttpRequest(); xhr.open('POST', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`);
+                xhr.upload.onprogress = e => { if (e.lengthComputable) { const percent = Math.round((e.loaded / e.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Uploading stream array... ${percent}%`; } };
+                xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText)); else reject(new Error("File structural size limit anomaly.")); };
+                xhr.onerror = () => reject(new Error("Network exception.")); xhr.send(formData);
             });
         }
 
         document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const CHUNK_SIZE_LIMIT = 11 * 1024 * 1024; // 11MB safe metric block partition configuration
-
+            const file = e.target.files[0]; if (!file) return;
+            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB split window to insulate metadata layers safely
             try {
-                if (file.size <= 19 * 1024 * 1024) { 
-                    showOverlayElement('system-loader');
-                    document.getElementById('loader-message-text').innerText = `Syncing entry point matrix for ${file.name}...`;
-                    
-                    const formData = new FormData(); 
-                    formData.append('chat_id', TELEGRAM_CHAT_ID); 
-                    formData.append('document', file);
-                    
-                    const res = await executeUploadPipelineWithProgressMonitor(formData);
-                    if (res.ok && res.result && res.result.document) { 
-                        cloudOS.files.push({ 
-                            id: res.result.document.file_id, 
-                            name: file.name, 
-                            size: (res.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
-                            parentId: currentParentFolderId,
-                            timestamp: Date.now()
-                        }); 
-                        await transmitMetadataPackageToCloud(); 
-                    }
+                if (file.size <= 19 * 1024 * 1024) {
+                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
+                    const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID); formData.append('document', file);
+                    const data = await uploadWithProgress(formData);
+                    if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId, timestamp: Date.now() }); await transmitMetadataPackageToCloud(); }
                 } else {
-                    // Trigger Auto Split Segment Optimization Routine Blocks
-                    showOverlayElement('system-loader');
-                    document.getElementById('loader-message-text').innerText = `De-constructing oversized matrix nodes...`; 
-                    updateUIVolumeProgressTrack(-1);
-                    await new Promise(r => setTimeout(r, 150));
+                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `De-serializing heavy document blocks...`; setProgress(-1);
+                    await new Promise(r => setTimeout(r, 100));
+                    const volumes = Math.ceil(file.size / CHUNK_LIMIT); const buffer = await file.arrayBuffer();
+                    const rawDoc = await PDFLib.PDFDocument.load(buffer); const totalPgs = rawDoc.getPageCount(); const chunkLen = Math.ceil(totalPgs / volumes);
+                    const autoFolder = 'folder_' + Date.now(); cloudOS.folders.push({ id: autoFolder, name: file.name.replace('.pdf', '') + " (Split Parts)", parentId: currentParentId });
                     
-                    const segmentVolumeCount = Math.ceil(file.size / CHUNK_SIZE_LIMIT); 
-                    const dataBufferArray = await file.arrayBuffer();
-                    const instantiatedPdfLibDocumentReference = await PDFLib.PDFDocument.load(dataBufferArray); 
-                    const completeDocumentPageCount = instantiatedPdfLibDocumentReference.getPageCount(); 
-                    const structuralAllocatedPagesPerSegment = Math.ceil(completeDocumentPageCount / segmentVolumeCount);
-
-                    // Auto generate a containing directory packet block for context placement
-                    const containmentAutoFolderId = 'folder_' + Date.now(); 
-                    cloudOS.folders.push({ id: containmentAutoFolderId, name: file.name.replace('.pdf', '') + " (Split Parts)", parentId: currentParentFolderId });
-                    
-                    for (let i = 0; i < segmentVolumeCount; i++) {
-                        document.getElementById('loader-message-text').innerText = `Processing branch block sector ${i+1}/${segmentVolumeCount}...`;
-                        const cleanDocumentInstance = await PDFLib.PDFDocument.create();
-                        const trackingIndexStart = i * structuralAllocatedPagesPerSegment; 
-                        const trackingIndexEnd = Math.min(trackingIndexStart + structuralAllocatedPagesPerSegment, completeDocumentPageCount);
-                        
-                        const numericalExtractionIndexRange = []; 
-                        for(let j = trackingIndexStart; j < trackingIndexEnd; j++) numericalExtractionIndexRange.push(j);
-                        
-                        const extractedPagesMapArray = await cleanDocumentInstance.copyPages(instantiatedPdfLibDocumentReference, numericalExtractionIndexRange); 
-                        extractedPagesMapArray.forEach(p => cleanDocumentInstance.addPage(p));
-                        
-                        const finalCompiledBytes = await cleanDocumentInstance.save(); 
-                        const unifiedBlobPacketData = new Blob([finalCompiledBytes], { type: 'application/pdf' });
-                        
-                        const formData = new FormData(); 
-                        formData.append('chat_id', TELEGRAM_CHAT_ID);
-                        const formulatedFileNameString = `${file.name.replace('.pdf', '')}_Part${i+1}.pdf`; 
-                        formData.append('document', unifiedBlobPacketData, formulatedFileNameString);
-                        
-                        const res = await executeUploadPipelineWithProgressMonitor(formData);
-                        if (res.ok && res.result && res.result.document) { 
-                            cloudOS.files.push({ 
-                                id: res.result.document.file_id, 
-                                name: formulatedFileNameString, 
-                                size: (res.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", 
-                                parentId: containmentAutoFolderId,
-                                timestamp: Date.now()
-                            }); 
-                        }
+                    for (let i = 0; i < volumes; i++) {
+                        document.getElementById('loader-message-text').innerText = `Slicing sector track ${i+1}/${volumes}...`;
+                        const partDoc = await PDFLib.PDFDocument.create(); const start = i * chunkLen; const end = Math.min(start + chunkLen, totalPgs);
+                        const range = []; for(let j = start; j < end; j++) range.push(j);
+                        const pages = await partDoc.copyPages(rawDoc, range); pages.forEach(p => partDoc.addPage(p));
+                        const bytes = await partDoc.save(); const blob = new Blob([bytes], { type: 'application/pdf' });
+                        const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID);
+                        const vName = `${file.name.replace('.pdf', '')}_Part${i+1}.pdf`; formData.append('document', blob, vName);
+                        const data = await uploadWithProgress(formData);
+                        if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: vName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolder, timestamp: Date.now() }); }
                     }
                     await transmitMetadataPackageToCloud();
                 }
-            } catch (err) { alert("Matrix upload aborted. Verification failure exception raised."); }
+            } catch (err) { alert("Execution aborted: Network matrix failure."); }
             hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
         });
 
-        window.addEventListener('load', () => {
-            if(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) forceCloudDBSync();
+        // --- HYBRID INTERFACES READER CORE ENGINE ---
+        let globalCompoundDocumentLayoutMap = []; let currentZoom = 1.0; let baseContainerWidth = 800; let basePageRatio = 1.414; let renderedPages = new Set();
+        let pageObserver = null;
+
+        async function initializePDFReaderViewport(file_id, fileName) {
+            showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = "Unpacking structural matrix layers..."; setProgress(0);
+            activeFileId = file_id; currentZoom = 1.0; renderedPages.clear(); document.getElementById('pdf-pages-container').innerHTML = '';
+            if (pageObserver) pageObserver.disconnect(); globalCompoundDocumentLayoutMap = [];
+
+            if(!cloudOS.last) cloudOS.last = {};
+            cloudOS.last.id = file_id; cloudOS.last.name = fileName; transmitMetadataPackageToCloud();
+            if(!cloudOS.history) cloudOS.history = [];
+            cloudOS.history = cloudOS.history.filter(h => h.id !== file_id);
+            cloudOS.history.push({ id: file_id, name: fileName, timestamp: Date.now() });
+
+            try {
+                document.getElementById('core-app-view').style.display = 'none'; document.getElementById('reader-view').style.display = 'flex';
+                document.getElementById('book-title-header').innerText = fileName; applyZoom();
+
+                const targetNode = cloudOS.files.find(f => f.id === file_id);
+                if(targetNode && targetNode.isVirtualCompound) {
+                    let seq = targetNode.compositionSequence; let offset = 0;
+                    for(let i=0; i<seq.length; i++) {
+                        document.getElementById('loader-message-text').innerText = `Compiling system segment matrix row ${i+1}/${seq.length}...`;
+                        let buf = await fetchTargetBinaryBufferBytes(seq[i]);
+                        let doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+                        globalCompoundDocumentLayoutMap.push({ fileId: seq[i], pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: offset });
+                        offset += doc.numPages;
+                    }
+                } else {
+                    let buf = await fetchTargetBinaryBufferBytes(file_id);
+                    let doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+                    globalCompoundDocumentLayoutMap.push({ fileId: file_id, pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: 0 });
+                }
+
+                pageCount = globalCompoundDocumentLayoutMap.reduce((a,c) => a + c.pageCount, 0);
+                document.getElementById('page-count').innerText = pageCount;
+                
+                await initLazyPages(); fetchLastPage(); updateBookmarkUI(); hideOverlayElement('system-loader');
+            } catch (err) { alert("Terminal Error: " + err.message); hideOverlayElement('system-loader'); closeBook(); }
+        }
+
+        async function fetchTargetBinaryBufferBytes(fileId) {
+            let diskData = await getBookFromVault(fileId); if(diskData) return diskData;
+            if(!isOnline) throw new Error("Offline asset unreachable.");
+            const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
+            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Cloud stream denied.");
+            const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
+            const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
+            
+            const task = pdfjsLib.getDocument({ url: proxyUrl });
+            task.onProgress = (p) => { if (p.total > 0) { const percent = Math.round((p.loaded / p.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Buffering to local storage drive... ${percent}%`; } };
+            const d = await task.promise; const obj = await d.getData();
+            await saveBookToVault(fileId, obj.buffer); await d.destroy(); return obj.buffer;
+        }
+
+        async function closeBook() {
+            document.getElementById('reader-view').style.display = 'none'; document.getElementById('core-app-view').style.display = 'flex';
+            globalCompoundDocumentLayoutMap.forEach(async (b) => { try { await b.pdfDocInstance.destroy(); }catch(e){} });
+            if (pageObserver) pageObserver.disconnect(); document.getElementById('pdf-pages-container').innerHTML = ''; renderedPages.clear();
+            if(isImmersive) toggleImmersive(); renderManagerFileSystemGrid(); renderDashboardHomePlatform();
+        }
+
+        async function initLazyPages() {
+            const vWidth = viewport.clientWidth; baseContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
+            const p1 = await globalCompoundDocumentLayoutMap[0].pdfDocInstance.getPage(1);
+            const vp1 = p1.getViewport({ scale: 1.0 }); basePageRatio = vp1.height / vp1.width;
+            let globalCounter = 1;
+
+            globalCompoundDocumentLayoutMap.forEach(block => {
+                for(let i=1; i<=block.pageCount; i++) {
+                    const wrapper = document.createElement('div'); wrapper.className = 'pdf-page-wrapper';
+                    wrapper.id = `page-wrapper-${globalCounter}`; wrapper.dataset.globalIndex = globalCounter;
+                    wrapper.dataset.internalPage = i; wrapper.dataset.blockId = block.fileId;
+                    wrapper.innerText = `Loading structural element ${globalCounter}...`;
+                    wrapper.style.width = `${baseContainerWidth}px`; wrapper.style.height = `${(baseContainerWidth * basePageRatio)}px`;
+                    pagesContainer.appendChild(wrapper); globalCounter++;
+                }
+            });
+
+            pageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { const g = parseInt(entry.target.dataset.globalIndex); if (!renderedPages.has(g)) renderPageCanvas(g, entry.target); } });
+            }, { root: viewport, rootMargin: '1000px 0px' });
+            document.querySelectorAll('.pdf-page-wrapper').forEach(w => pageObserver.observe(w));
+        }
+
+        async function renderPageCanvas(globalIndex, wrapper) {
+            renderedPages.add(globalIndex); wrapper.innerText = '';
+            const internalPage = parseInt(wrapper.dataset.internalPage); const blockId = wrapper.dataset.blockId;
+            const block = globalCompoundDocumentLayoutMap.find(b => b.fileId === blockId);
+            const page = await block.pdfDocInstance.getPage(internalPage);
+            
+            const dpr = window.devicePixelRatio || 1; const nativeViewport = page.getViewport({ scale: 1.0 });
+            const localRatio = nativeViewport.height / nativeViewport.width;
+            wrapper.style.height = `${(baseContainerWidth * localRatio)}px`;
+
+            const cssScale = baseContainerWidth / nativeViewport.width;
+            const renderViewport = page.getViewport({ scale: cssScale * dpr });
+            const displayViewport = page.getViewport({ scale: cssScale });
+
+            const canvas = document.createElement('canvas'); canvas.className = 'pdf-page-canvas';
+            canvas.width = renderViewport.width; canvas.height = renderViewport.height;
+            
+            const txtDiv = document.createElement('div'); txtDiv.className = 'text-layer';
+            const txtContent = await page.getTextContent();
+            txtContent.items.forEach(item => {
+                const tx = pdfjsLib.Util.transform(displayViewport.transform, item.transform); const h = Math.sqrt((tx[2]*tx[2])+(tx[3]*tx[3]));
+                const span = document.createElement('span'); span.textContent = item.str; span.style.left = `${tx[4]}px`; span.style.top = `${tx[5] - h}px`; span.style.fontSize = `${h}px`; span.style.fontFamily = item.fontName; txtDiv.appendChild(span);
+            });
+
+            wrapper.appendChild(canvas); wrapper.appendChild(txtDiv);
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: renderViewport }).promise;
+        }
+
+        function zoomIn() { currentZoom += 0.2; if(currentZoom > 3) currentZoom = 3; applyZoom(); }
+        function zoomOut() { currentZoom -= 0.2; if(currentZoom < 0.5) currentZoom = 0.5; applyZoom(); }
+        function applyZoom() { zoomContainer.style.transform = `scale(${currentZoom})`; viewport.scrollBy(0,1); viewport.scrollBy(0,-1); }
+
+        async function searchPDF() {
+            const query = document.getElementById('pdf-search-input').value.toLowerCase(); if(!query) return;
+            document.querySelectorAll('.text-layer mark').forEach(m => { const p = m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize(); });
+            let firstMatch = null; let gCounter = 1;
+
+            for(let block of globalCompoundDocumentLayoutMap) {
+                for(let p=1; p<=block.pageCount; p++) {
+                    const page = await block.pdfDocInstance.getPage(p); const content = await page.getTextContent();
+                    const str = content.items.map(i => i.str).join(' ').toLowerCase();
+                    if(str.includes(query)) {
+                        if(!firstMatch) firstMatch = gCounter; const wrapper = document.getElementById(`page-wrapper-${gCounter}`);
+                        if (!renderedPages.has(gCounter)) { await renderPageCanvas(gCounter, wrapper); }
+                        wrapper.querySelectorAll('.text-layer span').forEach(s => {
+                            if (s.textContent.toLowerCase().includes(query)) { const r = new RegExp(`(${query})`, 'gi'); s.innerHTML = s.textContent.replace(r, `<mark>$1</mark>`); }
+                        });
+                    }
+                    gCounter++;
+                }
+            }
+            if(firstMatch) { viewport.scrollTo({ top: document.getElementById(`page-wrapper-${firstMatch}`).offsetTop * currentZoom, behavior: 'smooth' }); }
+        }
+
+        viewport.addEventListener('scroll', () => {
+            let current = 1; document.querySelectorAll('.pdf-page-wrapper').forEach((el, idx) => { const r = el.getBoundingClientRect(); if (r.top <= window.innerHeight / 2 && r.bottom >= window.innerHeight / 2) current = idx + 1; });
+            if(current !== currentPageNum) { currentPageNum = current; document.getElementById('page-number').innerText = current; updateBookmarkUI(); clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { if(cloudOS.last && cloudOS.last.id === activeFileId) { cloudOS.last.page = current; transmitMetadataPackageToCloud(); } }, 1000); }
         });
+
+        function fetchLastPage() { if (cloudOS.last && cloudOS.last.id === activeFileId && cloudOS.last.page) { setTimeout(() => { const w = document.getElementById(`page-wrapper-${cloudOS.last.page}`); if (w) viewport.scrollTo({ top: w.offsetTop * currentZoom, behavior: 'auto' }); }, 500); } }
+        function toggleBookmark() { if(!cloudOS.bookmarks) cloudOS.bookmarks = []; const idx = cloudOS.bookmarks.findIndex(b => b.fileId === activeFileId && b.page === currentPageNum); if(idx >= 0) cloudOS.bookmarks.splice(idx, 1); else cloudOS.bookmarks.push({ fileId: activeFileId, page: currentPageNum }); updateBookmarkUI(); transmitMetadataPackageToCloud(); }
+        function updateBookmarkUI() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === activeFileId && b.page === currentPageNum); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('bookmarked'); else btn.classList.remove('bookmarked'); }
+        function showBookmarks() { const list = document.getElementById('bookmarks-list'); list.innerHTML = ''; const marks = (cloudOS.bookmarks || []).filter(b => b.fileId === activeFileId); if(marks.length === 0) { list.innerHTML = `<p style="color:#888;">Empty context.</p>`; } else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" onclick="jumpToPage(${m.page})">🔖 Page Track Segment ${m.page}</div>`; }); } showOverlayElement('bookmarks-modal'); }
+        function jumpToPage(pg) { hideOverlayElement('bookmarks-modal'); const w = document.getElementById(`page-wrapper-${pg}`); if(w) viewport.scrollTo({ top: w.offsetTop * currentZoom, behavior: 'smooth' }); }
+        function toggleImmersive() { isImmersive = !isImmersive; document.getElementById('reader-view').classList.toggle('immersive-mode', isImmersive); }
+        function setTool(t) { currentTool = t; }
+
+        // Boot system framework sequences securely
+        window.addEventListener('load', () => { if(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) proceedToApplicationWorkspace(); });
     </script>
 </body>
 </html>

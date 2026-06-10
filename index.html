@@ -106,7 +106,7 @@
         
         .card-footer { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid var(--border-color); background: #f8fafc; }
         .folder-card .card-footer { background: #fcfaf2; border-top-color: #e2d9be; }
-        .card-footer button { flex: 1; padding: 12px 0; background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 14px; transition: all 0.2s; border-right: 1px solid var(--border-color); }
+        .card-footer button { flex: 1; padding: 12px 0; background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 13px; font-weight: 500; transition: all 0.2s; border-right: 1px solid var(--border-color); }
         .card-footer button:last-child { border-right: none; }
         .card-footer button:hover { background: rgba(0,0,0,0.03); color: var(--primary); }
 
@@ -497,7 +497,7 @@
 
         // VIRTUAL SEQUENCE BINDING STATE
         let isSelectionMode = false;
-        let selectedFilesOrder = []; // Array used to track the exact sequence of clicks
+        let selectedFilesOrder = []; 
 
         const show = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; };
         const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
@@ -873,9 +873,9 @@
                 card.innerHTML = `
                     <div class="card-body" onclick="openFolder('${folder.id}')"><div class="card-icon">📁</div><div class="card-title">${folder.name}</div></div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button type="button" onclick="renameFolder('${folder.id}')">✏️</button>
-                        <button type="button" onclick="openMoveModal('${folder.id}', 'folder')">⮀</button>
-                        <button type="button" onclick="deleteFolder('${folder.id}')">🗑️</button>
+                        <button type="button" onclick="renameFolder('${folder.id}')">Rename</button>
+                        <button type="button" onclick="openMoveModal('${folder.id}', 'folder')">Move</button>
+                        <button type="button" onclick="deleteFolder('${folder.id}')">Delete</button>
                     </div>`;
                 grid.appendChild(card);
             });
@@ -899,9 +899,9 @@
                         <div class="card-icon">📄</div><div class="card-title">${file.name}</div><div class="card-meta">${file.size}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
-                        <button type="button" onclick="renameFile('${file.id}')">✏️</button>
-                        <button type="button" onclick="openMoveModal('${file.id}', 'file')">⮀</button>
-                        <button type="button" onclick="deleteFile('${file.id}')">🗑️</button>
+                        <button type="button" onclick="renameFile('${file.id}')">Rename</button>
+                        <button type="button" onclick="openMoveModal('${file.id}', 'file')">Move</button>
+                        <button type="button" onclick="deleteFile('${file.id}')">Delete</button>
                     </div>`;
                 grid.appendChild(card);
             });
@@ -992,7 +992,7 @@
             
             // Build the gateway failover list
             const proxyGateways = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${rawUrl}`,
                 `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`,
                 `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`
             ];
@@ -1147,7 +1147,7 @@
 
         document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            const CHUNK_LIMIT = 10 * 1024 * 1024;
+            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB chunking limit
             try {
                 if (file.size <= 19 * 1024 * 1024) {
                     showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
@@ -1177,21 +1177,6 @@
             } catch (err) { alert("Matrix upload failure."); }
             hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
         });
-
-        function triggerVirtualBinderAssembly() {
-            const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
-            segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-            const mapStr = segments.map((f, i) => `${i+1}. ${f.name}`).join('\n');
-            if(!confirm(`Bind following chunks sequentially into a Virtual Continuous Canvas Bundle?\n\n${mapStr}`)) return;
-            const compoundLabel = segments[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Virtual Anthology";
-            const compoundId = "virtual_" + Date.now();
-            
-            cloudOS.files.push({
-                id: compoundId, name: `📦 [Virtual Binder] ${compoundLabel}.pdf`, size: "~ Combined Book Pack",
-                parentId: currentParentId, isVirtualCompound: true, compositionSequence: segments.map(f => f.id), timestamp: Date.now()
-            });
-            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
-        }
 
         // --- THE STARTUP SAFEGUARD ENGINE ---
         window.addEventListener('load', () => { 

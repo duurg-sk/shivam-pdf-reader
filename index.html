@@ -34,7 +34,7 @@
 
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-light); color: var(--text-main); }
 
-        /* --- SPA VIEW MANAGER --- */
+        /* --- SPA VIEW MANAGER FIX --- */
         .spa-view { display: none !important; width: 100%; height: 100%; }
         .spa-view.active-view { display: flex !important; }
 
@@ -330,7 +330,7 @@
                         <div id="selection-action-bar" style="display: none; background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);">
                             <div style="font-weight: 600; color: #0369a1;"><span id="sel-count-text">0</span> PDFs Selected</div>
                             <div style="display: flex; gap: 8px;">
-                                <button type="button" class="btn-action btn-primary" onclick="executeManualVirtualMerge()">📦 Bind Selected (Virtual)</button>
+                                <button type="button" class="btn-action btn-primary" onclick="executeManualVirtualMerge()">📦 Bind Sequence (Virtual)</button>
                                 <button type="button" class="btn-action" onclick="toggleSelectionMode()" style="background:transparent; border:1px solid #7dd3fc; color:#0369a1;">Cancel</button>
                             </div>
                         </div>
@@ -495,9 +495,9 @@
         let movingType = null;
         let isOnline = navigator.onLine;
 
-        // VIRTUAL BINDING STATE
+        // VIRTUAL SEQUENCE BINDING STATE
         let isSelectionMode = false;
-        let selectedFileIds = new Set();
+        let selectedFilesOrder = []; // Array used to track the exact sequence of clicks
 
         const show = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; };
         const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
@@ -537,6 +537,7 @@
 
             if(!bot || !chat) { alert("Please populate all necessary validation markers."); return; }
 
+            // Ensure parameters are committed to memory before syncing
             TELEGRAM_BOT_TOKEN = bot;
             TELEGRAM_CHAT_ID = chat;
             
@@ -782,10 +783,10 @@
             });
         }
 
-        // --- NEW VIRTUAL MANUAL MERGE SELECTION ---
+        // --- NEW VIRTUAL MANUAL MERGE SELECTION WITH NUMBERED SEQUENCE ---
         function toggleSelectionMode() {
             isSelectionMode = !isSelectionMode;
-            selectedFileIds.clear();
+            selectedFilesOrder = []; // Reset the sequence array
             document.getElementById('selection-action-bar').style.display = isSelectionMode ? 'flex' : 'none';
             document.getElementById('btn-select-mode').classList.toggle('active-tool', isSelectionMode);
             renderManagerFileSystemGrid();
@@ -793,19 +794,27 @@
 
         function toggleFileSelection(fileId, event) {
             event.stopPropagation();
-            if (selectedFileIds.has(fileId)) { selectedFileIds.delete(fileId); } 
-            else { selectedFileIds.add(fileId); }
-            document.getElementById('sel-count-text').innerText = selectedFileIds.size;
+            const index = selectedFilesOrder.indexOf(fileId);
+            if (index > -1) { 
+                selectedFilesOrder.splice(index, 1); // Remove if already selected
+            } else { 
+                selectedFilesOrder.push(fileId); // Add to end of sequence
+            }
+            document.getElementById('sel-count-text').innerText = selectedFilesOrder.length;
             renderManagerFileSystemGrid();
         }
 
         function executeManualVirtualMerge() {
-            if (selectedFileIds.size < 2) { alert("Please select at least 2 files to bind."); return; }
-            const name = prompt("Enter a name for this Virtual Book Bundle:");
+            if (selectedFilesOrder.length < 2) { alert("Please tap to select at least 2 files in the order you want them bound."); return; }
+            const name = prompt("Enter a name for this Sequential Book Bundle:");
             if (!name) return;
 
-            let filesToBind = cloudOS.files.filter(f => selectedFileIds.has(f.id));
-            filesToBind.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            // Map the selected IDs directly back to their file objects IN THE EXACT TAPPED SEQUENCE
+            let filesToBind = [];
+            selectedFilesOrder.forEach(id => {
+                const f = cloudOS.files.find(file => file.id === id);
+                if (f) filesToBind.push(f);
+            });
 
             const compoundId = "virtual_" + Date.now();
             cloudOS.files.push({
@@ -875,9 +884,11 @@
                 const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
                 const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:16px; z-index:2;">🔖</div>` : '';
                 
-                const isSelected = selectedFileIds.has(file.id);
+                // Track selection sequence visually
+                const selIndex = selectedFilesOrder.indexOf(file.id);
+                const isSelected = selIndex > -1;
                 const selBorder = isSelected ? `border: 2px solid var(--primary); background: #f0f9ff;` : ``;
-                const selCheck = isSelected ? `<div style="position:absolute; top:10px; right:10px; font-size:18px; z-index:2;">✅</div>` : '';
+                const selCheck = isSelected ? `<div style="position:absolute; top:10px; right:10px; font-size:12px; font-weight:bold; background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:2; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${selIndex + 1}</div>` : '';
                 
                 const clickAction = isSelectionMode ? `toggleFileSelection('${file.id}', event)` : `initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')`;
 
@@ -966,7 +977,7 @@
             }
         }
 
-        // --- RAW ARRAYBUFFER MANUAL DOWNLOAD PIPELINE FIX ---
+        // --- NEW MULTI-PROXY WATERFALL SYSTEM ---
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); 
             if(diskData && diskData.byteLength > 100) return diskData; 
@@ -978,14 +989,35 @@
             if (!pathData.ok) throw new Error("Access rejected by Telegram API.");
             
             const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
             
-            document.getElementById('loader-message-text').innerText = `Downloading document stream...`;
+            // Build the gateway failover list
+            const proxyGateways = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`,
+                `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`
+            ];
             
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error("Proxy gateway refused connection.");
+            let arrayBuffer = null;
+            let lastError = "";
+
+            for (let i = 0; i < proxyGateways.length; i++) {
+                try {
+                    document.getElementById('loader-message-text').innerText = `Routing via Network Gateway ${i+1}...`;
+                    const response = await fetch(proxyGateways[i]);
+                    if (response.ok) {
+                        arrayBuffer = await response.arrayBuffer();
+                        break; // Success! Exit the loop
+                    }
+                } catch (e) {
+                    console.warn(`Gateway ${i+1} rejected connection, switching routes...`);
+                    lastError = e.message;
+                }
+            }
+
+            if (!arrayBuffer) {
+                throw new Error("All public network gateways refused the connection. Your local ISP is blocking proxy traffic.");
+            }
             
-            const arrayBuffer = await response.arrayBuffer();
             await saveBookToVault(fileId, arrayBuffer); 
             return arrayBuffer;
         }
@@ -1115,7 +1147,7 @@
 
         document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB chunking limit
+            const CHUNK_LIMIT = 10 * 1024 * 1024;
             try {
                 if (file.size <= 19 * 1024 * 1024) {
                     showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
@@ -1146,7 +1178,6 @@
             hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
         });
 
-        // AUTO MERGE FOR SPLIT FILES
         function triggerVirtualBinderAssembly() {
             const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
             segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));

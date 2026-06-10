@@ -826,6 +826,23 @@
             toggleSelectionMode(); // Exits mode and re-renders
         }
 
+        // --- THE MISSING AUTO BIND FUNCTION ---
+        function triggerVirtualBinderAssembly() {
+            const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
+            segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            const mapStr = segments.map((f, i) => `${i+1}. ${f.name}`).join('\n');
+            if(!confirm(`Bind following chunks sequentially into a Virtual Continuous Canvas Bundle?\n\n${mapStr}`)) return;
+            const compoundLabel = segments[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Virtual Anthology";
+            const compoundId = "virtual_" + Date.now();
+            
+            cloudOS.files.push({
+                id: compoundId, name: `📦 [Virtual Binder] ${compoundLabel}.pdf`, size: "~ Combined Book Pack",
+                parentId: currentParentId, isVirtualCompound: true, compositionSequence: segments.map(f => f.id), timestamp: Date.now()
+            });
+            transmitMetadataPackageToCloud(); 
+            renderManagerFileSystemGrid();
+        }
+
         function renderManagerFileSystemGrid() {
             const grid = document.getElementById('manager-file-system-grid'); grid.innerHTML = '';
             const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
@@ -940,11 +957,10 @@
             if(!cloudOS.last) cloudOS.last = {};
             
             // --- PROGRESS TRACKING FIX ---
-            // Find if we have read this book before to get its specific last page
             let savedPage = 1;
             let historyIndex = cloudOS.history.findIndex(h => h.id === file_id);
             if(historyIndex > -1) { 
-                savedPage = cloudOS.history[historyIndex].page || 1; // Get the specific book's page
+                savedPage = cloudOS.history[historyIndex].page || 1; 
                 cloudOS.history.splice(historyIndex, 1); 
             }
             cloudOS.history.push({id: file_id, name: fileName, page: savedPage});
@@ -952,7 +968,7 @@
 
             cloudOS.last.id = file_id; 
             cloudOS.last.name = fileName; 
-            cloudOS.last.page = savedPage; // Apply unique page to the global quick resume
+            cloudOS.last.page = savedPage; 
             
             transmitMetadataPackageToCloud();
 
@@ -975,7 +991,6 @@
                     globalCompoundDocumentLayoutMap.push({ fileId: file_id, pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: 0 });
                 }
 
-                // Wait to display the viewer until after the blocks are securely downloaded
                 document.getElementById('core-app-view').classList.remove('active-view'); 
                 document.getElementById('reader-view').classList.add('active-view');
                 document.getElementById('reader-active-document-title').innerText = fileName; 
@@ -1040,7 +1055,6 @@
         }
 
         function terminateReaderSession() {
-            // FIX: Swap the CSS class instead of setting style.display back to block the !important rule
             document.getElementById('reader-view').classList.remove('active-view'); 
             document.getElementById('core-app-view').classList.add('active-view');
             
@@ -1146,14 +1160,9 @@
                 clearTimeout(window.syncTimeout); 
                 
                 window.syncTimeout = setTimeout(() => { 
-                    // Update the global Quick Resume banner
-                    if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) { 
-                        cloudOS.last.page = current; 
-                    } 
-                    // Update this specific book's memory
+                    if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) { cloudOS.last.page = current; } 
                     let historyItem = cloudOS.history.find(h => h.id === readerActiveFileContextId);
                     if (historyItem) { historyItem.page = current; }
-                    
                     transmitMetadataPackageToCloud(); 
                 }, 1000); 
             }
@@ -1194,7 +1203,7 @@
 
         document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB chunking limit
+            const CHUNK_LIMIT = 10 * 1024 * 1024;
             try {
                 if (file.size <= 19 * 1024 * 1024) {
                     showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
@@ -1225,7 +1234,6 @@
             hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
         });
 
-        // --- THE STARTUP SAFEGUARD ENGINE ---
         window.addEventListener('load', () => { 
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
@@ -1237,5 +1245,6 @@
             });
         });
     </script>
+
 </body>
 </html>

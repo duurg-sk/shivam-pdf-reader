@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -81,7 +81,7 @@
         .workspace-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin: 0; color: #1a202c; }
         .workspace-body { flex: 1; overflow-y: auto; padding: 32px; box-sizing: border-box; }
 
-        /* --- SETTINGS INTERFACE STYLES (NEW) --- */
+        /* --- SETTINGS INTERFACE STYLES --- */
         .settings-card { background: #fff; border-radius: var(--radius-lg); padding: 30px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 24px; max-width: 650px; }
         .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); }
         .settings-row:last-child { border-bottom: none; }
@@ -379,13 +379,13 @@
                 <button class="btn-edge-dark" onclick="showBookmarks()">📑 <span>Bookmarks</span></button>
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
                 <div class="search-container">
-                    <input type="text" id="reader-in-file-search-field" placeholder="Search text...">
+                    <input type="text" id="pdf-search-input" placeholder="Search text...">
                 </div>
-                <button class="btn-edge-dark" onclick="executeInFileSearchQuery()">🔍 Scan</button>
+                <button class="btn-edge-dark" onclick="searchPDF()">🔍 Scan</button>
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
                 <button class="btn-edge-dark active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Select Text</span></button>
-                <button class="btn-edge-dark" onclick="executeViewportZoomModification(0.2)">➕ <span>Zoom In</span></button>
-                <button class="btn-edge-dark" onclick="executeViewportZoomModification(-0.2)">➖</button>
+                <button class="btn-edge-dark" onclick="zoomIn()">➕ <span>Zoom In</span></button>
+                <button class="btn-edge-dark" onclick="zoomOut()">➖</button>
             </div>
         </div>
 
@@ -407,21 +407,17 @@
     </div>
 
     <script>
-        // --- SECURE LOCAL CODES STORAGE CONFIGURATION ---
-        // REPLACE WITH THE ACTUAL CREDENTIAL CONFIGURATION GENERATED DIRECTLY IN YOUR FIREBASE CONSOLE INTERFACE
+        // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
         const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APPLICATION_ID"
+            apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
+            authDomain: "shivam-pdf-reader.firebaseapp.com",
+            projectId: "shivam-pdf-reader",
+            storageBucket: "shivam-pdf-reader.firebasestorage.app",
+            messagingSenderId: "324191397825",
+            appId: "1:324191397825:web:0c13b65a39c6ab09627140"
         };
         
-        // Initializer catch layer to avoid runtime errors prior to console binding pass
-        if(firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
-            firebase.initializeApp(firebaseConfig);
-        }
+        firebase.initializeApp(firebaseConfig);
 
         const DB_NAME = "ShivamPDFStorageVaultDB";
         let localVault;
@@ -500,14 +496,9 @@
             sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
             try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
 
-            // Initialize anonymous workspace session interface
-            if(firebase.apps.length > 0) {
-                firebase.auth().signInAnonymously().then((credential) => {
-                    saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
-                }).catch(() => { proceedToApplicationWorkspace(); });
-            } else {
-                proceedToApplicationWorkspace();
-            }
+            firebase.auth().signInAnonymously().then((credential) => {
+                saveTelegramTargetDBCredentialsToFirestore(credential.user.uid);
+            }).catch(() => { proceedToApplicationWorkspace(); });
         }
 
         function executeDirectAPIPassportBypass() {
@@ -555,13 +546,11 @@
 
         // --- CLOUD AUTHENTICATION ROUTINES ---
         function executeGoogleOAuthPipeline() {
-            if(firebase.apps.length === 0) { alert("Firebase infrastructure parameters unconfigured."); return; }
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider).then(async (result) => {
                 const active = await fetchCredentialsFromUserCloudProfile(result.user.uid);
                 if(active) { proceedToApplicationWorkspace(); } 
                 else {
-                    // Prompt link context values
                     const token = prompt("Google account verified! Enter your existing Telegram Bot Token to link your files:");
                     const id = prompt("Enter your Telegram Chat ID:");
                     if(token && id) {
@@ -573,12 +562,10 @@
         }
 
         function executeIdentityPassphraseLogin() {
-            if(firebase.apps.length === 0) { alert("Firebase unconfigured."); return; }
             const id = document.getElementById('login-identifier').value.trim();
             const pass = document.getElementById('login-password').value;
 
             if(!id || !pass) { alert("Complete fields."); return; }
-            
             const targetedEmailString = id.includes('@') ? id : `${id}@pdfreader.internal`;
             
             showOverlayElement('system-loader');
@@ -597,7 +584,7 @@
             }).catch(err => alert("Recovery fault: " + err.message));
         }
 
-        // --- ACCOUNT SETTINGS CONTROL PACKETS (NEW) ---
+        // --- SPA NAVIGATION CORE PLATFORM ---
         function navigateToSPASection(targetSection) {
             document.getElementById('subview-home').style.display = 'none';
             document.getElementById('subview-manager').style.display = 'none';
@@ -609,7 +596,7 @@
 
             if(targetSection === 'home') {
                 document.getElementById('subview-home').style.display = 'flex';
-                document.getElementById('nav-home').classList.add('add', 'active');
+                document.getElementById('nav-home').classList.add('active');
                 renderDashboardHomePlatform();
             } else if (targetSection === 'manager') {
                 document.getElementById('subview-manager').style.display = 'flex';
@@ -626,7 +613,6 @@
             const user = firebase.auth().currentUser;
             if(!user) return;
 
-            // Analyze active credential trees linked
             let methods = user.providerData.map(p => p.providerId);
             let hasGoogle = methods.includes('google.com');
             let hasEmail = methods.includes('password') && !user.email.endsWith('.internal');
@@ -668,11 +654,10 @@
         function executeProfileSessionSignOut() {
             sessionStorage.clear();
             try { localStorage.clear(); } catch(e){}
-            if(firebase.apps.length > 0) firebase.auth().signOut();
+            firebase.auth().signOut();
             window.location.reload();
         }
 
-        // --- MONITOR DEBOUNCE TRACKS ---
         function setProgress(percent) {
             const container = document.getElementById('loader-progress-track');
             const bar = document.getElementById('loader-progress-fill');
@@ -719,19 +704,15 @@
             renderManagerFileSystemGrid(); renderDashboardHomePlatform(); hideOverlayElement('system-loader');
         }
 
-        // --- FILE MANAGER UI & ACCELERATED DETECTIONS ---
-        function detectSequentialSplitNamingPatterns() {
-            const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
-            const patterns = [/_part\d+/i, /-part\d+/i, /_vol\d+/i, /-vol\d+/i, /part_\d+/i, /vol_\d+/i];
-            let detectionTriggered = false;
-            for(let file of internalFiles) {
-                if(patterns.some(p => p.test(file.name))) { detectionTriggered = true; break; }
-            }
-            document.getElementById('virtual-binder-accelerator').style.display = detectionTriggered ? 'flex' : 'none';
+        function resolveBreadcrumbHierarchy(folderId) {
+            if (folderId === "root") return [{id: "root", name: "My Drive"}];
+            const found = cloudOS.folders.find(f => f.id === folderId);
+            if (!found) return [{id: "root", name: "My Drive"}];
+            return [...resolveBreadcrumbHierarchy(found.parentId), {id: found.id, name: found.name}];
         }
 
-        function filterGrid() {
-            const query = document.getElementById('fm-search').value.toLowerCase();
+        function executeCatalogFiltering() {
+            const query = document.getElementById('manager-search-field').value.toLowerCase();
             document.querySelectorAll('#manager-file-system-grid .book-card').forEach(card => {
                 const title = card.querySelector('.card-title').innerText.toLowerCase();
                 card.style.display = title.includes(query) ? 'flex' : 'none';
@@ -761,16 +742,20 @@
 
         function renderManagerFileSystemGrid() {
             const grid = document.getElementById('manager-file-system-grid'); grid.innerHTML = '';
-            detectSequentialSplitNamingPatterns();
+            const internalFiles = cloudOS.files.filter(f => f.parentId === currentParentId);
+            const patterns = [/_part\d+/i, /-part\d+/i, /_vol\d+/i, /-vol\d+/i, /part_\d+/i, /vol_\d+/i];
+            let detectionTriggered = false;
+            for(let file of internalFiles) { if(patterns.some(p => p.test(file.name))) { detectionTriggered = true; break; } }
+            document.getElementById('virtual-binder-accelerator').style.display = detectionTriggered ? 'flex' : 'none';
 
             const crumbs = resolveBreadcrumbHierarchy(currentParentId);
-            const crumbContainer = document.getElementById('breadcrumbs'); crumbContainer.innerHTML = '';
+            const crumbContainer = document.getElementById('manager-breadcrumbs-node'); crumbContainer.innerHTML = '';
             crumbs.forEach((crumb, index) => {
-                const link = document.createElement('span'); link.className = 'crumb-link'; link.innerText = crumb.name;
+                const link = document.createElement('span'); link.className = 'crumb-item'; link.innerText = crumb.name;
                 link.onclick = () => { currentParentId = crumb.id; renderManagerFileSystemGrid(); };
                 crumbContainer.appendChild(link);
                 if (index < crumbs.length - 1) {
-                    const sep = document.createElement('span'); sep.className = 'crumb-sep'; sep.innerText = ' / ';
+                    const sep = document.createElement('span'); sep.innerText = ' / '; sep.style.color = "var(--text-muted)";
                     crumbContainer.appendChild(sep);
                 }
             });
@@ -792,53 +777,50 @@
             }
 
             if (activeFolders.length === 0 && activeFiles.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1/-1; color:#888; text-align: center; margin-top: 50px;">This structural matrix node branch is completely clear.</p>`; return;
+                grid.innerHTML = `<p style="grid-column: 1/-1; color:#888; text-align: center; margin-top: 50px;">This folder branch is completely empty.</p>`; return;
             }
 
             activeFolders.forEach(folder => {
                 const card = document.createElement('div'); card.className = 'book-card folder-card';
                 card.innerHTML = `
-                    <div class="card-body" onclick="openFolder('${folder.id}')"><div class="book-icon">📁</div><div class="book-title">${folder.name}</div></div>
+                    <div class="card-body" onclick="openFolder('${folder.id}')"><div class="card-icon">📁</div><div class="card-title">${folder.name}</div></div>
                     <div class="card-footer" onclick="event.stopPropagation()">
                         <button onclick="renameFolder('${folder.id}')">✏️</button>
                         <button onclick="openMoveModal('${folder.id}', 'folder')">⮀</button>
-                        <button class="del" onclick="deleteFolder('${folder.id}')">🗑️</button>
+                        <button onclick="deleteFolder('${folder.id}')">🗑️</button>
                     </div>`;
                 grid.appendChild(card);
             });
 
             [...activeFiles].reverse().forEach(file => {
                 const isBookmarked = cloudOS.bookmarks.some(b => b.fileId === file.id);
-                const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:20px; z-index:2;">🔖</div>` : '';
+                const markHtml = isBookmarked ? `<div style="position:absolute; top:10px; left:10px; font-size:16px; z-index:2;">🔖</div>` : '';
                 const card = document.createElement('div'); card.className = 'book-card';
                 card.innerHTML = `
                     ${markHtml}
                     <div class="card-body" onclick="initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
-                        <div class="book-icon">📄</div><div class="book-title">${file.name}</div><div class="book-meta">${file.size}</div>
+                        <div class="card-icon">📄</div><div class="card-title">${file.name}</div><div class="card-meta">${file.size}</div>
                     </div>
                     <div class="card-footer" onclick="event.stopPropagation()">
                         <button onclick="renameFile('${file.id}')">✏️</button>
                         <button onclick="openMoveModal('${file.id}', 'file')">⮀</button>
-                        <button class="del" onclick="deleteFile('${file.id}')">🗑️</button>
+                        <button onclick="deleteFile('${file.id}')">🗑️</button>
                     </div>`;
                 grid.appendChild(card);
             });
         }
 
         function openFolder(folderId) { currentParentId = folderId; renderManagerFileSystemGrid(); }
-        function triggerRecentResume() { if(cloudOS.last && cloudOS.last.id) initializePDFReaderViewport(cloudOS.last.id, cloudOS.last.name); }
-
-        // --- CORE FILE/FOLDER OPERATIONS ---
-        function renameFile(id) { const file = cloudOS.files.find(f => f.id === id); if (!file) return; const newName = prompt("Enter modification labeling metrics:", file.name); if (newName && newName.trim() !== "") { file.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
-        function renameFolder(id) { const folder = cloudOS.folders.find(f => f.id === id); if (!folder) return; const newName = prompt("Enter modification labeling metrics:", folder.name); if (newName && newName.trim() !== "") { folder.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
+        function triggerFolderCreationSequence() { const name = prompt("Enter new folder designator name:"); if (!name || name.trim() === "") return; cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name.trim(), parentId: currentParentId }); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
+        function renameFile(id) { const file = cloudOS.files.find(f => f.id === id); if (!file) return; const newName = prompt("Enter modified parameter string:", file.name); if (newName && newName.trim() !== "") { file.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
+        function renameFolder(id) { const folder = cloudOS.folders.find(f => f.id === id); if (!folder) return; const newName = prompt("Enter modified parameter string:", folder.name); if (newName && newName.trim() !== "") { folder.name = newName.trim(); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); } }
         function deleteFile(fileId) { if(!confirm("Purge file completely?")) return; cloudOS.files = cloudOS.files.filter(f => f.id !== fileId); if (cloudOS.last && cloudOS.last.id === fileId) cloudOS.last = null; cloudOS.bookmarks = cloudOS.bookmarks.filter(b => b.fileId !== fileId); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
-        function deleteFolder(folderId) { if(!confirm("Purge all lower directory context assets recursively?")) return; let idsToDelete = [folderId]; let foundNew = true; while(foundNew) { foundNew = false; cloudOS.folders.forEach(f => { if (idsToDelete.includes(f.parentId) && !idsToDelete.includes(f.id)) { idsToDelete.push(f.id); foundNew = true; } }); } cloudOS.folders = cloudOS.folders.filter(f => !idsToDelete.includes(f.id)); cloudOS.files = cloudOS.files.filter(f => !idsToDelete.includes(f.parentId)); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
-        function createNewFolder() { const name = prompt("Enter designator:"); if (!name) return; cloudOS.folders.push({ id: 'folder_' + Date.now(), name: name, parentId: currentParentId }); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
+        function deleteFolder(folderId) { if(!confirm("Purge all lower parameters recursively?")) return; let idsToDelete = [folderId]; let foundNew = true; while(foundNew) { foundNew = false; cloudOS.folders.forEach(f => { if (idsToDelete.includes(f.parentId) && !idsToDelete.includes(f.id)) { idsToDelete.push(f.id); foundNew = true; } }); } cloudOS.folders = cloudOS.folders.filter(f => !idsToDelete.includes(f.id)); cloudOS.files = cloudOS.files.filter(f => !idsToDelete.includes(f.parentId)); transmitMetadataPackageToCloud(); renderManagerFileSystemGrid(); }
         
         function openMoveModal(id, type) {
-            movingBookId = id; movingType = type; const list = document.getElementById('folder-list');
-            list.innerHTML = `<div class="folder-list-item" onclick="moveTo('root')">🏠 Base Drive Directory</div>`;
-            cloudOS.folders.forEach(f => { if (type === 'folder' && f.id === id) return; list.innerHTML += `<div class="folder-list-item" onclick="moveTo('${f.id}')">📁 ${f.name}</div>`; });
+            movingBookId = id; movingType = type; const list = document.getElementById('interactive-folder-tree');
+            list.innerHTML = `<div class="folder-list-item" style="padding:10px; cursor:pointer;" onclick="moveTo('root')">🏠 Base Drive Directory</div>`;
+            cloudOS.folders.forEach(f => { if (type === 'folder' && f.id === id) return; list.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer;" onclick="moveTo('${f.id}')">📁 ${f.name}</div>`; });
             showOverlayElement('move-structural-modal');
         }
         function moveTo(targetFolderId) { 
@@ -847,89 +829,27 @@
             transmitMetadataPackageToCloud(); hideOverlayElement('move-structural-modal'); renderManagerFileSystemGrid();
         }
 
-        // --- NAME-BASED STRUCTURAL VIRTUAL CELL MERGER ENGINE ---
-        function triggerVirtualBinderAssembly() {
-            const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
-            segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-            const mapStr = segments.map((f, i) => `${i+1}. ${f.name}`).join('\n');
-            if(!confirm(`Bind following chunks sequentially into a Virtual Continuous Canvas Bundle?\n\n${mapStr}`)) return;
-            const compoundLabel = segments[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Virtual Anthology";
-            const compoundId = "virtual_" + Date.now();
-            
-            cloudOS.files.push({
-                id: compoundId, name: `📦 [Virtual Binder] ${compoundLabel}.pdf`, size: "~ Combined Book Pack",
-                parentId: currentParentId, isVirtualCompound: true, compositionSequence: segments.map(f => f.id), timestamp: Date.now()
-            });
-            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
-        }
-
-        // --- BUFFER TRANSLATION STREAM CHANNELS ---
-        function uploadWithProgress(formData) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest(); xhr.open('POST', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`);
-                xhr.upload.onprogress = e => { if (e.lengthComputable) { const percent = Math.round((e.loaded / e.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Uploading stream array... ${percent}%`; } };
-                xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText)); else reject(new Error("File structural size limit anomaly.")); };
-                xhr.onerror = () => reject(new Error("Network exception.")); xhr.send(formData);
-            });
-        }
-
-        document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const CHUNK_LIMIT = 10 * 1024 * 1024; // 10MB split window to insulate metadata layers safely
-            try {
-                if (file.size <= 19 * 1024 * 1024) {
-                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
-                    const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID); formData.append('document', file);
-                    const data = await uploadWithProgress(formData);
-                    if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId, timestamp: Date.now() }); await transmitMetadataPackageToCloud(); }
-                } else {
-                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `De-serializing heavy document blocks...`; setProgress(-1);
-                    await new Promise(r => setTimeout(r, 100));
-                    const volumes = Math.ceil(file.size / CHUNK_LIMIT); const buffer = await file.arrayBuffer();
-                    const rawDoc = await PDFLib.PDFDocument.load(buffer); const totalPgs = rawDoc.getPageCount(); const chunkLen = Math.ceil(totalPgs / volumes);
-                    const autoFolder = 'folder_' + Date.now(); cloudOS.folders.push({ id: autoFolder, name: file.name.replace('.pdf', '') + " (Split Parts)", parentId: currentParentId });
-                    
-                    for (let i = 0; i < volumes; i++) {
-                        document.getElementById('loader-message-text').innerText = `Slicing sector track ${i+1}/${volumes}...`;
-                        const partDoc = await PDFLib.PDFDocument.create(); const start = i * chunkLen; const end = Math.min(start + chunkLen, totalPgs);
-                        const range = []; for(let j = start; j < end; j++) range.push(j);
-                        const pages = await partDoc.copyPages(rawDoc, range); pages.forEach(p => partDoc.addPage(p));
-                        const bytes = await partDoc.save(); const blob = new Blob([bytes], { type: 'application/pdf' });
-                        const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID);
-                        const vName = `${file.name.replace('.pdf', '')}_Part${i+1}.pdf`; formData.append('document', blob, vName);
-                        const data = await uploadWithProgress(formData);
-                        if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: vName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolder, timestamp: Date.now() }); }
-                    }
-                    await transmitMetadataPackageToCloud();
-                }
-            } catch (err) { alert("Execution aborted: Network matrix failure."); }
-            hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
-        });
-
-        // --- HYBRID INTERFACES READER CORE ENGINE ---
-        let globalCompoundDocumentLayoutMap = []; let currentZoom = 1.0; let baseContainerWidth = 800; let basePageRatio = 1.414; let renderedPages = new Set();
-        let pageObserver = null;
+        // --- CONTINUOUS ACCELERATED RENDERING PIPELINE CONTROLLERS ---
+        let globalCompoundDocumentLayoutMap = []; let activeViewportScaleValue = 1.0; let baseLayoutContainerWidth = 800; let basePageRatio = 1.414; let runtimeRenderedPageTrackingSet = new Set();
+        let instantiatedIntersectObserver = null; let readerActiveFileContextId = null; let currentViewportTrackingPageIndex = 1;
 
         async function initializePDFReaderViewport(file_id, fileName) {
-            showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = "Unpacking structural matrix layers..."; setProgress(0);
-            activeFileId = file_id; currentZoom = 1.0; renderedPages.clear(); document.getElementById('pdf-pages-container').innerHTML = '';
-            if (pageObserver) pageObserver.disconnect(); globalCompoundDocumentLayoutMap = [];
+            showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = "Loading local document layers..."; setProgress(0);
+            readerActiveFileContextId = file_id; activeViewportScaleValue = 1.0; runtimeRenderedPageTrackingSet.clear(); document.getElementById('pdf-pages-container').innerHTML = '';
+            if (instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect(); globalCompoundDocumentLayoutMap = [];
 
             if(!cloudOS.last) cloudOS.last = {};
             cloudOS.last.id = file_id; cloudOS.last.name = fileName; transmitMetadataPackageToCloud();
-            if(!cloudOS.history) cloudOS.history = [];
-            cloudOS.history = cloudOS.history.filter(h => h.id !== file_id);
-            cloudOS.history.push({ id: file_id, name: fileName, timestamp: Date.now() });
 
             try {
                 document.getElementById('core-app-view').style.display = 'none'; document.getElementById('reader-view').style.display = 'flex';
-                document.getElementById('book-title-header').innerText = fileName; applyZoom();
+                document.getElementById('reader-active-document-title').innerText = fileName; executeViewportZoomModification(0);
 
                 const targetNode = cloudOS.files.find(f => f.id === file_id);
                 if(targetNode && targetNode.isVirtualCompound) {
                     let seq = targetNode.compositionSequence; let offset = 0;
                     for(let i=0; i<seq.length; i++) {
-                        document.getElementById('loader-message-text').innerText = `Compiling system segment matrix row ${i+1}/${seq.length}...`;
+                        document.getElementById('loader-message-text').innerText = `Binding segment channel matrix index ${i+1}/${seq.length}...`;
                         let buf = await fetchTargetBinaryBufferBytes(seq[i]);
                         let doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
                         globalCompoundDocumentLayoutMap.push({ fileId: seq[i], pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: offset });
@@ -944,33 +864,37 @@
                 pageCount = globalCompoundDocumentLayoutMap.reduce((a,c) => a + c.pageCount, 0);
                 document.getElementById('page-count').innerText = pageCount;
                 
-                await initLazyPages(); fetchLastPage(); updateBookmarkUI(); hideOverlayElement('system-loader');
-            } catch (err) { alert("Terminal Error: " + err.message); hideOverlayElement('system-loader'); closeBook(); }
+                await initLazyPages(); jumpToSavedPageIndexContext(); evaluateContextBookmarkUIVisuals(); hideOverlayElement('system-loader');
+            } catch (err) { alert("Terminal Context Error: " + err.message); hideOverlayElement('system-loader'); terminateReaderSession(); }
         }
 
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); if(diskData) return diskData;
-            if(!isOnline) throw new Error("Offline asset unreachable.");
+            if(!isOnline) throw new Error("Connection failed.");
             const pathRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Cloud stream denied.");
+            const pathData = await pathRes.json(); if (!pathData.ok) throw new Error("Access rejected.");
             const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
             const proxyUrl = `https://shivam-proxy.shivam9155204817.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
             
             const task = pdfjsLib.getDocument({ url: proxyUrl });
-            task.onProgress = (p) => { if (p.total > 0) { const percent = Math.round((p.loaded / p.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Buffering to local storage drive... ${percent}%`; } };
+            task.onProgress = (p) => { if (p.total > 0) { const percent = Math.round((p.loaded / p.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Syncing chunk metrics... ${percent}%`; } };
             const d = await task.promise; const obj = await d.getData();
             await saveBookToVault(fileId, obj.buffer); await d.destroy(); return obj.buffer;
         }
 
-        async function closeBook() {
+        function terminateReaderSession() {
             document.getElementById('reader-view').style.display = 'none'; document.getElementById('core-app-view').style.display = 'flex';
             globalCompoundDocumentLayoutMap.forEach(async (b) => { try { await b.pdfDocInstance.destroy(); }catch(e){} });
-            if (pageObserver) pageObserver.disconnect(); document.getElementById('pdf-pages-container').innerHTML = ''; renderedPages.clear();
-            if(isImmersive) toggleImmersive(); renderManagerFileSystemGrid(); renderDashboardHomePlatform();
+            if (instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect(); document.getElementById('pdf-pages-container').innerHTML = ''; runtimeRenderedPageTrackingSet.clear();
+            if(document.getElementById('reader-view').classList.contains('immersive-mode')) toggleImmersive();
+            renderManagerFileSystemGrid(); renderDashboardHomePlatform();
         }
 
         async function initLazyPages() {
-            const vWidth = viewport.clientWidth; baseContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
+            const viewport = document.getElementById('viewport-canvas-container');
+            const pagesContainer = document.getElementById('pdf-pages-container');
+            const vWidth = viewport.clientWidth; baseLayoutContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
+            
             const p1 = await globalCompoundDocumentLayoutMap[0].pdfDocInstance.getPage(1);
             const vp1 = p1.getViewport({ scale: 1.0 }); basePageRatio = vp1.height / vp1.width;
             let globalCounter = 1;
@@ -978,31 +902,31 @@
             globalCompoundDocumentLayoutMap.forEach(block => {
                 for(let i=1; i<=block.pageCount; i++) {
                     const wrapper = document.createElement('div'); wrapper.className = 'pdf-page-wrapper';
-                    wrapper.id = `page-wrapper-${globalCounter}`; wrapper.dataset.globalIndex = globalCounter;
+                    wrapper.id = `virtual-page-node-${globalCounter}`; wrapper.dataset.globalIndex = globalCounter;
                     wrapper.dataset.internalPage = i; wrapper.dataset.blockId = block.fileId;
-                    wrapper.innerText = `Loading structural element ${globalCounter}...`;
-                    wrapper.style.width = `${baseContainerWidth}px`; wrapper.style.height = `${(baseContainerWidth * basePageRatio)}px`;
+                    wrapper.innerText = `Loading layout layer page block ${globalCounter}...`;
+                    wrapper.style.width = `${baseLayoutContainerWidth}px`; wrapper.style.height = `${(baseLayoutContainerWidth * basePageRatio)}px`;
                     pagesContainer.appendChild(wrapper); globalCounter++;
                 }
             });
 
-            pageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => { if (entry.isIntersecting) { const g = parseInt(entry.target.dataset.globalIndex); if (!renderedPages.has(g)) renderPageCanvas(g, entry.target); } });
-            }, { root: viewport, rootMargin: '1000px 0px' });
-            document.querySelectorAll('.pdf-page-wrapper').forEach(w => pageObserver.observe(w));
+            instantiatedIntersectObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { const g = parseInt(entry.target.dataset.globalIndex); if (!runtimeRenderedPageTrackingSet.has(g)) renderPageCanvas(g, entry.target); } });
+            }, { root: viewport, rootMargin: '1200px 0px' });
+            document.querySelectorAll('.pdf-page-wrapper').forEach(w => instantiatedIntersectObserver.observe(w));
         }
 
         async function renderPageCanvas(globalIndex, wrapper) {
-            renderedPages.add(globalIndex); wrapper.innerText = '';
+            runtimeRenderedPageTrackingSet.add(globalIndex); wrapper.innerText = '';
             const internalPage = parseInt(wrapper.dataset.internalPage); const blockId = wrapper.dataset.blockId;
             const block = globalCompoundDocumentLayoutMap.find(b => b.fileId === blockId);
             const page = await block.pdfDocInstance.getPage(internalPage);
             
             const dpr = window.devicePixelRatio || 1; const nativeViewport = page.getViewport({ scale: 1.0 });
             const localRatio = nativeViewport.height / nativeViewport.width;
-            wrapper.style.height = `${(baseContainerWidth * localRatio)}px`;
+            wrapper.style.height = `${(baseLayoutContainerWidth * localRatio)}px`;
 
-            const cssScale = baseContainerWidth / nativeViewport.width;
+            const cssScale = baseLayoutContainerWidth / nativeViewport.width;
             const renderViewport = page.getViewport({ scale: cssScale * dpr });
             const displayViewport = page.getViewport({ scale: cssScale });
 
@@ -1020,9 +944,12 @@
             await page.render({ canvasContext: canvas.getContext('2d'), viewport: renderViewport }).promise;
         }
 
-        function zoomIn() { currentZoom += 0.2; if(currentZoom > 3) currentZoom = 3; applyZoom(); }
-        function zoomOut() { currentZoom -= 0.2; if(currentZoom < 0.5) currentZoom = 0.5; applyZoom(); }
-        function applyZoom() { zoomContainer.style.transform = `scale(${currentZoom})`; viewport.scrollBy(0,1); viewport.scrollBy(0,-1); }
+        function executeViewportZoomModification(amount) {
+            activeViewportScaleValue += amount; if(activeViewportScaleValue < 0.5) activeViewportScaleValue = 0.5; if(activeViewportScaleValue > 2.5) activeViewportScaleValue = 2.5;
+            document.getElementById('zoom-container').style.transform = `scale(${activeViewportScaleValue})`;
+            const viewport = document.getElementById('viewport-canvas-container');
+            viewport.scrollBy(0,1); viewport.scrollBy(0,-1);
+        }
 
         async function searchPDF() {
             const query = document.getElementById('pdf-search-input').value.toLowerCase(); if(!query) return;
@@ -1034,8 +961,8 @@
                     const page = await block.pdfDocInstance.getPage(p); const content = await page.getTextContent();
                     const str = content.items.map(i => i.str).join(' ').toLowerCase();
                     if(str.includes(query)) {
-                        if(!firstMatch) firstMatch = gCounter; const wrapper = document.getElementById(`page-wrapper-${gCounter}`);
-                        if (!renderedPages.has(gCounter)) { await renderPageCanvas(gCounter, wrapper); }
+                        if(!firstMatch) firstMatch = gCounter; const wrapper = document.getElementById(`virtual-page-node-${gCounter}`);
+                        if (!runtimeRenderedPageTrackingSet.has(gCounter)) { await renderPageCanvas(gCounter, wrapper); }
                         wrapper.querySelectorAll('.text-layer span').forEach(s => {
                             if (s.textContent.toLowerCase().includes(query)) { const r = new RegExp(`(${query})`, 'gi'); s.innerHTML = s.textContent.replace(r, `<mark>$1</mark>`); }
                         });
@@ -1043,23 +970,90 @@
                     gCounter++;
                 }
             }
-            if(firstMatch) { viewport.scrollTo({ top: document.getElementById(`page-wrapper-${firstMatch}`).offsetTop * currentZoom, behavior: 'smooth' }); }
+            if(firstMatch) { document.getElementById('viewport-canvas-container').scrollTo({ top: document.getElementById(`virtual-page-node-${firstMatch}`).offsetTop * activeViewportScaleValue, behavior: 'smooth' }); }
         }
 
-        viewport.addEventListener('scroll', () => {
+        document.getElementById('viewport-canvas-container').addEventListener('scroll', () => {
             let current = 1; document.querySelectorAll('.pdf-page-wrapper').forEach((el, idx) => { const r = el.getBoundingClientRect(); if (r.top <= window.innerHeight / 2 && r.bottom >= window.innerHeight / 2) current = idx + 1; });
-            if(current !== currentPageNum) { currentPageNum = current; document.getElementById('page-number').innerText = current; updateBookmarkUI(); clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { if(cloudOS.last && cloudOS.last.id === activeFileId) { cloudOS.last.page = current; transmitMetadataPackageToCloud(); } }, 1000); }
+            if(current !== currentViewportTrackingPageIndex) { currentViewportTrackingPageIndex = current; document.getElementById('page-number').innerText = current; evaluateContextBookmarkUIVisuals(); clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) { cloudOS.last.page = current; transmitMetadataPackageToCloud(); } }, 1000); }
         });
 
-        function fetchLastPage() { if (cloudOS.last && cloudOS.last.id === activeFileId && cloudOS.last.page) { setTimeout(() => { const w = document.getElementById(`page-wrapper-${cloudOS.last.page}`); if (w) viewport.scrollTo({ top: w.offsetTop * currentZoom, behavior: 'auto' }); }, 500); } }
-        function toggleBookmark() { if(!cloudOS.bookmarks) cloudOS.bookmarks = []; const idx = cloudOS.bookmarks.findIndex(b => b.fileId === activeFileId && b.page === currentPageNum); if(idx >= 0) cloudOS.bookmarks.splice(idx, 1); else cloudOS.bookmarks.push({ fileId: activeFileId, page: currentPageNum }); updateBookmarkUI(); transmitMetadataPackageToCloud(); }
-        function updateBookmarkUI() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === activeFileId && b.page === currentPageNum); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('bookmarked'); else btn.classList.remove('bookmarked'); }
-        function showBookmarks() { const list = document.getElementById('bookmarks-list'); list.innerHTML = ''; const marks = (cloudOS.bookmarks || []).filter(b => b.fileId === activeFileId); if(marks.length === 0) { list.innerHTML = `<p style="color:#888;">Empty context.</p>`; } else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" onclick="jumpToPage(${m.page})">🔖 Page Track Segment ${m.page}</div>`; }); } showOverlayElement('bookmarks-modal'); }
-        function jumpToPage(pg) { hideOverlayElement('bookmarks-modal'); const w = document.getElementById(`page-wrapper-${pg}`); if(w) viewport.scrollTo({ top: w.offsetTop * currentZoom, behavior: 'smooth' }); }
+        function jumpToSavedPageIndexContext() { if (cloudOS.last && cloudOS.last.id === readerActiveFileContextId && cloudOS.last.page) { setTimeout(() => { const w = document.getElementById(`virtual-page-node-${cloudOS.last.page}`); if (w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'auto' }); }, 500); } }
+        function toggleBookmark() { if(!cloudOS.bookmarks) cloudOS.bookmarks = []; const idx = cloudOS.bookmarks.findIndex(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); if(idx >= 0) cloudOS.bookmarks.splice(idx, 1); else cloudOS.bookmarks.push({ fileId: readerActiveFileContextId, page: currentViewportTrackingPageIndex }); evaluateContextBookmarkUIVisuals(); transmitMetadataPackageToCloud(); }
+        function evaluateContextBookmarkUIVisuals() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('bookmarked'); else btn.classList.remove('bookmarked'); }
+        
+        function showBookmarks() { 
+            const list = document.getElementById('bookmarks-list'); if(!list) return; list.innerHTML = ''; 
+            const marks = (cloudOS.bookmarks || []).filter(b => b.fileId === readerActiveFileContextId); 
+            if(marks.length === 0) { list.innerHTML = `<p style="color:#888;">Empty track markers.</p>`; } 
+            else { marks.sort((a,b) => a.page - b.page).forEach(m => { list.innerHTML += `<div class="folder-list-item" style="padding:10px; cursor:pointer;" onclick="jumpToPage(${m.page})">🔖 Jump to structural page: ${m.page}</div>`; }); } 
+            showOverlayElement('move-structural-modal'); 
+        }
+        function jumpToPage(pg) { hideOverlayElement('move-structural-modal'); const w = document.getElementById(`virtual-page-node-${pg}`); if(w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'smooth' }); }
         function toggleImmersive() { isImmersive = !isImmersive; document.getElementById('reader-view').classList.toggle('immersive-mode', isImmersive); }
         function setTool(t) { currentTool = t; }
 
-        // Boot system framework sequences securely
+        function uploadWithProgress(formData) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest(); xhr.open('POST', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`);
+                xhr.upload.onprogress = e => { if (e.lengthComputable) { const percent = Math.round((e.loaded / e.total) * 100); setProgress(percent); document.getElementById('loader-message-text').innerText = `Uploading chunk context stream... ${percent}%`; } };
+                xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText)); else reject(new Error("Size limit issue.")); };
+                xhr.onerror = () => reject(new Error("Network exception.")); xhr.send(formData);
+            });
+        }
+
+        document.getElementById('binary-disk-uploader').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const CHUNK_LIMIT = 10 * 1024 * 1024;
+            try {
+                if (file.size <= 19 * 1024 * 1024) {
+                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Pushing data core: ${file.name}...`;
+                    const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID); formData.append('document', file);
+                    const data = await uploadWithProgress(formData);
+                    if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: file.name, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: currentParentId, timestamp: Date.now() }); await transmitMetadataPackageToCloud(); }
+                } else {
+                    showOverlayElement('system-loader'); document.getElementById('loader-message-text').innerText = `Slicing heavy asset files...`; setProgress(-1);
+                    await new Promise(r => setTimeout(r, 100));
+                    const volumes = Math.ceil(file.size / CHUNK_LIMIT); const buffer = await file.arrayBuffer();
+                    const rawDoc = await PDFLib.PDFDocument.load(buffer); const totalPgs = rawDoc.getPageCount(); const chunkLen = Math.ceil(totalPgs / volumes);
+                    const autoFolder = 'folder_' + Date.now(); cloudOS.folders.push({ id: autoFolder, name: file.name.replace('.pdf', '') + " (Split Parts)", parentId: currentParentId });
+                    
+                    for (let i = 0; i < volumes; i++) {
+                        document.getElementById('loader-message-text').innerText = `Slicing segment ${i+1}/${volumes}...`;
+                        const partDoc = await PDFLib.PDFDocument.create(); const start = i * chunkLen; const end = Math.min(start + chunkLen, totalPgs);
+                        const range = []; for(let j = start; j < end; j++) range.push(j);
+                        const pages = await partDoc.copyPages(rawDoc, range); pages.forEach(p => partDoc.addPage(p));
+                        const bytes = await partDoc.save(); const blob = new Blob([bytes], { type: 'application/pdf' });
+                        const formData = new FormData(); formData.append('chat_id', TELEGRAM_CHAT_ID);
+                        const vName = `${file.name.replace('.pdf', '')}_Part${i+1}.pdf`; formData.append('document', blob, vName);
+                        const data = await uploadWithProgress(formData);
+                        if (data.ok && data.result && data.result.document) { cloudOS.files.push({ id: data.result.document.file_id, name: vName, size: (data.result.document.file_size / 1024 / 1024).toFixed(2) + " MB", parentId: autoFolder, timestamp: Date.now() }); }
+                    }
+                    await transmitMetadataPackageToCloud();
+                }
+            } catch (err) { alert("Matrix upload failure."); }
+            hideOverlayElement('system-loader'); renderManagerFileSystemGrid(); e.target.value = ''; 
+        });
+
+        function triggerVirtualBinderAssembly() {
+            const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
+            segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            const mapStr = segments.map((f, i) => `${i+1}. ${f.name}`).join('\n');
+            if(!confirm(`Bind following chunks sequentially into a Virtual Continuous Canvas Bundle?\n\n${mapStr}`)) return;
+            const compoundLabel = segments[0].name.replace(/[-_]?(part|vol|v|pt)?[-_]?\d+.*$/i, '').trim() || "Virtual Anthology";
+            const compoundId = "virtual_" + Date.now();
+            
+            cloudOS.files.push({
+                id: compoundId, name: `📦 [Virtual Binder] ${compoundLabel}.pdf`, size: "~ Combined Book Pack",
+                parentId: currentParentId, isVirtualCompound: true, compositionSequence: segments.map(f => f.id), timestamp: Date.now()
+            });
+            transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
+        }
+
+        const viewport = document.getElementById('viewport-canvas-container');
+        const zoomContainer = document.getElementById('zoom-container');
+        const pagesContainer = document.getElementById('pdf-pages-container');
+
         window.addEventListener('load', () => { if(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) proceedToApplicationWorkspace(); });
     </script>
 </body>

@@ -938,12 +938,21 @@
             if (instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect(); globalCompoundDocumentLayoutMap = [];
 
             if(!cloudOS.last) cloudOS.last = {};
-            cloudOS.last.id = file_id; cloudOS.last.name = fileName; 
             
+            // --- PROGRESS TRACKING FIX ---
+            // Find if we have read this book before to get its specific last page
+            let savedPage = 1;
             let historyIndex = cloudOS.history.findIndex(h => h.id === file_id);
-            if(historyIndex > -1) { cloudOS.history.splice(historyIndex, 1); }
-            cloudOS.history.push({id: file_id, name: fileName});
+            if(historyIndex > -1) { 
+                savedPage = cloudOS.history[historyIndex].page || 1; // Get the specific book's page
+                cloudOS.history.splice(historyIndex, 1); 
+            }
+            cloudOS.history.push({id: file_id, name: fileName, page: savedPage});
             if(cloudOS.history.length > 20) cloudOS.history.shift();
+
+            cloudOS.last.id = file_id; 
+            cloudOS.last.name = fileName; 
+            cloudOS.last.page = savedPage; // Apply unique page to the global quick resume
             
             transmitMetadataPackageToCloud();
 
@@ -966,7 +975,7 @@
                     globalCompoundDocumentLayoutMap.push({ fileId: file_id, pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: 0 });
                 }
 
-                // FIX: Swap the CSS class instead of setting style.display to bypass the !important rule
+                // Wait to display the viewer until after the blocks are securely downloaded
                 document.getElementById('core-app-view').classList.remove('active-view'); 
                 document.getElementById('reader-view').classList.add('active-view');
                 document.getElementById('reader-active-document-title').innerText = fileName; 
@@ -1129,10 +1138,37 @@
 
         document.getElementById('viewport-canvas-container').addEventListener('scroll', () => {
             let current = 1; document.querySelectorAll('.pdf-page-wrapper').forEach((el, idx) => { const r = el.getBoundingClientRect(); if (r.top <= window.innerHeight / 2 && r.bottom >= window.innerHeight / 2) current = idx + 1; });
-            if(current !== currentViewportTrackingPageIndex) { currentViewportTrackingPageIndex = current; document.getElementById('page-number').innerText = current; evaluateContextBookmarkUIVisuals(); clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) { cloudOS.last.page = current; transmitMetadataPackageToCloud(); } }, 1000); }
+            
+            if(current !== currentViewportTrackingPageIndex) { 
+                currentViewportTrackingPageIndex = current; 
+                document.getElementById('page-number').innerText = current; 
+                evaluateContextBookmarkUIVisuals(); 
+                clearTimeout(window.syncTimeout); 
+                
+                window.syncTimeout = setTimeout(() => { 
+                    // Update the global Quick Resume banner
+                    if(cloudOS.last && cloudOS.last.id === readerActiveFileContextId) { 
+                        cloudOS.last.page = current; 
+                    } 
+                    // Update this specific book's memory
+                    let historyItem = cloudOS.history.find(h => h.id === readerActiveFileContextId);
+                    if (historyItem) { historyItem.page = current; }
+                    
+                    transmitMetadataPackageToCloud(); 
+                }, 1000); 
+            }
         });
 
-        function jumpToSavedPageIndexContext() { if (cloudOS.last && cloudOS.last.id === readerActiveFileContextId && cloudOS.last.page) { setTimeout(() => { const w = document.getElementById(`virtual-page-node-${cloudOS.last.page}`); if (w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'auto' }); }, 500); } }
+        function jumpToSavedPageIndexContext() { 
+            let historyItem = cloudOS.history.find(h => h.id === readerActiveFileContextId);
+            if (historyItem && historyItem.page > 1) { 
+                setTimeout(() => { 
+                    const w = document.getElementById(`virtual-page-node-${historyItem.page}`); 
+                    if (w) document.getElementById('viewport-canvas-container').scrollTo({ top: w.offsetTop * activeViewportScaleValue, behavior: 'auto' }); 
+                }, 500); 
+            } 
+        }
+
         function toggleBookmark() { if(!cloudOS.bookmarks) cloudOS.bookmarks = []; const idx = cloudOS.bookmarks.findIndex(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); if(idx >= 0) cloudOS.bookmarks.splice(idx, 1); else cloudOS.bookmarks.push({ fileId: readerActiveFileContextId, page: currentViewportTrackingPageIndex }); evaluateContextBookmarkUIVisuals(); transmitMetadataPackageToCloud(); }
         function evaluateContextBookmarkUIVisuals() { const isB = cloudOS.bookmarks && cloudOS.bookmarks.some(b => b.fileId === readerActiveFileContextId && b.page === currentViewportTrackingPageIndex); const btn = document.getElementById('bookmark-btn'); if(isB) btn.classList.add('active-state'); else btn.classList.remove('active-state'); }
         

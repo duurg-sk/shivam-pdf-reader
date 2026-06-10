@@ -966,9 +966,9 @@
                     globalCompoundDocumentLayoutMap.push({ fileId: file_id, pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: 0 });
                 }
 
-                // Wait to display the viewer until after the blocks are securely downloaded
-                document.getElementById('core-app-view').style.display = 'none'; 
-                document.getElementById('reader-view').style.display = 'flex';
+                // FIX: Swap the CSS class instead of setting style.display to bypass the !important rule
+                document.getElementById('core-app-view').classList.remove('active-view'); 
+                document.getElementById('reader-view').classList.add('active-view');
                 document.getElementById('reader-active-document-title').innerText = fileName; 
                 executeViewportZoomModification(0);
 
@@ -1031,7 +1031,10 @@
         }
 
         function terminateReaderSession() {
-            document.getElementById('reader-view').style.display = 'none'; document.getElementById('core-app-view').style.display = 'flex';
+            // FIX: Swap the CSS class instead of setting style.display back to block the !important rule
+            document.getElementById('reader-view').classList.remove('active-view'); 
+            document.getElementById('core-app-view').classList.add('active-view');
+            
             globalCompoundDocumentLayoutMap.forEach(async (b) => { try { await b.pdfDocInstance.destroy(); }catch(e){} });
             if (instantiatedIntersectObserver) instantiatedIntersectObserver.disconnect(); document.getElementById('pdf-pages-container').innerHTML = ''; runtimeRenderedPageTrackingSet.clear();
             if(document.getElementById('reader-view').classList.contains('immersive-mode')) toggleImmersive();

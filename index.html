@@ -150,7 +150,7 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         }
         .reader-title-field { font-size: 14px; font-weight: 500; color: #e2e8f0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-        .reader-action-cluster { display: flex; gap: 8px; align-items: center; }
+        .reader-action-cluster { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
         
         .btn-edge-dark { background: transparent; color: #cbd5e1; border: none; height: 38px; padding: 0 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; white-space: nowrap; }
         .btn-edge-dark:hover { background: rgba(255,255,255,0.06); color: #fff; }
@@ -158,15 +158,14 @@
 
         .viewport-canvas-container { flex: 1; overflow: auto; touch-action: pan-x pan-y; padding: 40px 0 100px 0; position: relative; }
         
-        /* FIX: Zoom Scaling anchor centered at top to prevent horizontal scroll shift */
+        /* FIX: Zoom Scaling anchor centered at top-left to prevent cutoff */
         .zoom-scaler-node { 
-            transform-origin: top center; 
+            transform-origin: 0 0; 
             transition: transform 0.1s ease-out; 
-            width: 100%; 
-            display: flex; 
+            display: inline-flex; 
             flex-direction: column; 
             align-items: center; 
-            margin: 0 auto;
+            min-width: 100%;
         }
         .continuous-pages-stack { display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; }
         
@@ -215,9 +214,9 @@
             .control-panel-cluster { width: 100%; justify-content: space-between; }
             .workspace-body { padding: 16px; }
             
-            /* SWIPABLE MOBILE READER TOOLBAR */
+            /* SWIPABLE MOBILE READER TOOLBAR (Landscape Fix) */
             .reader-header-bar { flex-direction: column; align-items: stretch; padding: 12px; gap: 12px; height: auto; }
-            .reader-action-cluster { width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+            .reader-action-cluster { width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 6px; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
             .reader-action-cluster::-webkit-scrollbar { height: 4px; }
             .reader-action-cluster::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
             #pdf-search-input { width: 90px !important; }
@@ -444,7 +443,7 @@
                 <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
                 <button type="button" class="btn-edge-dark active-tool" id="tool-pan" onclick="setTool('pan')">✋ <span>Select Text</span></button>
                 <button type="button" class="btn-edge-dark" onclick="zoomIn()">➕ <span>Zoom In</span></button>
-                <button type="button" class="btn-edge-dark" onclick="zoomOut()">➖</button>
+                <button type="button" class="btn-edge-dark" onclick="zoomOut()">➖ <span>Zoom Out</span></button>
             </div>
         </div>
 
@@ -793,6 +792,13 @@
             });
         }
 
+        // --- QUICK RESUME FIX ---
+        function triggerRecentResume() {
+            if (cloudOS.last && cloudOS.last.id && cloudOS.last.name) {
+                initializePDFReaderViewport(cloudOS.last.id, cloudOS.last.name.replace(/'/g, "\\'"));
+            }
+        }
+
         function renderDashboardHomePlatform() {
             const grid = document.getElementById('dashboard-recent-grid'); grid.innerHTML = '';
             if (cloudOS.last && cloudOS.last.id) {
@@ -1098,7 +1104,6 @@
             const pagesContainer = document.getElementById('pdf-pages-container');
             const vWidth = viewport.clientWidth; 
             
-            // Dynamic width scaling to prevent horizontal clipping on desktop monitors
             baseLayoutContainerWidth = vWidth < 850 ? (vWidth - 20) : 800; 
             
             const p1 = await globalCompoundDocumentLayoutMap[0].pdfDocInstance.getPage(1);
@@ -1153,22 +1158,24 @@
         function zoomIn() { executeViewportZoomModification(0.2); }
         function zoomOut() { executeViewportZoomModification(-0.2); }
 
-        // --- FIXED PROPORTIONAL SCROLL ZOOM ---
+        // --- FIXED ZERO-ORIGIN ZOOM SCALING ---
         function executeViewportZoomModification(amount) {
             const viewport = document.getElementById('viewport-canvas-container');
-            
-            // Calculate where we are currently viewing relative to the unscaled height
-            const centerY = viewport.scrollTop + (viewport.clientHeight / 2);
-            const ratioY = centerY / activeViewportScaleValue;
+            const zoomContainer = document.getElementById('zoom-container');
+
+            // Find current scroll relative to scaled content
+            const scrollLeftRatio = viewport.scrollLeft / activeViewportScaleValue;
+            const scrollTopRatio = viewport.scrollTop / activeViewportScaleValue;
 
             activeViewportScaleValue += amount; 
             if(activeViewportScaleValue < 0.5) activeViewportScaleValue = 0.5; 
             if(activeViewportScaleValue > 3.5) activeViewportScaleValue = 3.5;
             
-            document.getElementById('zoom-container').style.transform = `scale(${activeViewportScaleValue})`;
+            zoomContainer.style.transform = `scale(${activeViewportScaleValue})`;
             
-            // Instantly map the scroll view back to the exact same relative spot 
-            viewport.scrollTop = (ratioY * activeViewportScaleValue) - (viewport.clientHeight / 2);
+            // Adjust scroll exactly to match new scale geometry
+            viewport.scrollLeft = scrollLeftRatio * activeViewportScaleValue;
+            viewport.scrollTop = scrollTopRatio * activeViewportScaleValue;
         }
 
         async function searchPDF() {

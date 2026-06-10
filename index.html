@@ -134,16 +134,40 @@
 
         /* --- IMMERSIVE VIEWPORT CAPABILITIES --- */
         #reader-view { flex-direction: column; background: #e2e8f0; position: relative; }
-        .reader-header-bar { width: 100%; min-height: 56px; background: #111; color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* UPGRADED RESPONSIVE READER HEADER */
+        .reader-header-bar { 
+            width: 100%; 
+            min-height: 56px; 
+            background: #111; 
+            color: #fff; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0 20px; 
+            box-sizing: border-box; 
+            z-index: 100; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
         .reader-title-field { font-size: 14px; font-weight: 500; color: #e2e8f0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
         .reader-action-cluster { display: flex; gap: 8px; align-items: center; }
         
-        .btn-edge-dark { background: transparent; color: #cbd5e1; border: none; height: 38px; padding: 0 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-edge-dark { background: transparent; color: #cbd5e1; border: none; height: 38px; padding: 0 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; white-space: nowrap; }
         .btn-edge-dark:hover { background: rgba(255,255,255,0.06); color: #fff; }
         .btn-edge-dark.active-tool { background: var(--primary); color: #fff; }
 
         .viewport-canvas-container { flex: 1; overflow: auto; touch-action: pan-x pan-y; padding: 40px 0 100px 0; position: relative; }
-        .zoom-scaler-node { transform-origin: 0 0; transition: transform 0.1s ease-out; min-width: 100%; display: flex; flex-direction: column; align-items: center; }
+        
+        /* FIX: Zoom Scaling anchor centered at top to prevent horizontal scroll shift */
+        .zoom-scaler-node { 
+            transform-origin: top center; 
+            transition: transform 0.1s ease-out; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0 auto;
+        }
         .continuous-pages-stack { display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; }
         
         .pdf-page-wrapper { position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.15); background: #ffffff; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 13px; color: var(--text-muted); }
@@ -190,26 +214,14 @@
             .workspace-header { padding: 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
             .control-panel-cluster { width: 100%; justify-content: space-between; }
             .workspace-body { padding: 16px; }
+            
+            /* SWIPABLE MOBILE READER TOOLBAR */
+            .reader-header-bar { flex-direction: column; align-items: stretch; padding: 12px; gap: 12px; height: auto; }
+            .reader-action-cluster { width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+            .reader-action-cluster::-webkit-scrollbar { height: 4px; }
+            .reader-action-cluster::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+            #pdf-search-input { width: 90px !important; }
             .reader-action-cluster span { display: none; }
-            /* --- UPGRADED MOBILE READER HEADER --- */
-        .reader-header-bar { 
-            flex-direction: column; 
-            align-items: stretch; 
-            padding: 12px; 
-            gap: 12px; 
-            height: auto; 
-        }
-        .reader-action-cluster { 
-            width: 100%; 
-            overflow-x: auto; /* Allows swiping left/right through tools */
-            justify-content: flex-start;
-            padding-bottom: 6px;
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-        }
-        .reader-action-cluster::-webkit-scrollbar { height: 4px; }
-        .reader-action-cluster::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        #pdf-search-input { width: 90px !important; } /* Shrinks search box to fit */
-        .reader-action-cluster span { display: none; }
         }
     </style>
 </head>
@@ -802,7 +814,7 @@
             });
         }
 
-        // --- NEW VIRTUAL MANUAL MERGE SELECTION WITH NUMBERED SEQUENCE ---
+        // --- VIRTUAL MANUAL MERGE SELECTION WITH NUMBERED SEQUENCE ---
         function toggleSelectionMode() {
             isSelectionMode = !isSelectionMode;
             selectedFilesOrder = []; // Reset the sequence array
@@ -845,7 +857,6 @@
             toggleSelectionMode(); // Exits mode and re-renders
         }
 
-        // --- THE MISSING AUTO BIND FUNCTION ---
         function triggerVirtualBinderAssembly() {
             const segments = cloudOS.files.filter(f => f.parentId === currentParentId);
             segments.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
@@ -975,7 +986,7 @@
 
             if(!cloudOS.last) cloudOS.last = {};
             
-            // --- PROGRESS TRACKING FIX ---
+            // INDEPENDENT PROGRESS TRACKING FIX
             let savedPage = 1;
             let historyIndex = cloudOS.history.findIndex(h => h.id === file_id);
             if(historyIndex > -1) { 
@@ -1013,7 +1024,9 @@
                 document.getElementById('core-app-view').classList.remove('active-view'); 
                 document.getElementById('reader-view').classList.add('active-view');
                 document.getElementById('reader-active-document-title').innerText = fileName; 
-                executeViewportZoomModification(0);
+                
+                // Initialize default zoom
+                document.getElementById('zoom-container').style.transform = `scale(1.0)`;
 
                 pageCount = globalCompoundDocumentLayoutMap.reduce((a,c) => a + c.pageCount, 0);
                 document.getElementById('page-count').innerText = pageCount;
@@ -1027,7 +1040,6 @@
             }
         }
 
-        // --- NEW MULTI-PROXY WATERFALL SYSTEM WITH FIREWALL BYPASS ---
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); 
             if(diskData && diskData.byteLength > 100) return diskData; 
@@ -1040,7 +1052,6 @@
             
             const rawUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${pathData.result.file_path}`;
             
-            // Build the gateway failover list
             const proxyGateways = [
                 `https://api.codetabs.com/v1/proxy?quest=${rawUrl}`,
                 `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`,
@@ -1055,7 +1066,7 @@
                     const response = await fetch(proxyGateways[i]);
                     if (response.ok) {
                         arrayBuffer = await response.arrayBuffer();
-                        break; // Success! Exit the loop
+                        break; 
                     }
                 } catch (e) {
                     console.warn(`Gateway ${i+1} rejected connection, switching routes...`);
@@ -1063,7 +1074,6 @@
             }
 
             if (!arrayBuffer) {
-                // FIREWALL BYPASS: Open directly in a new tab if all proxies are killed
                 alert("Network firewall blocked the proxies. Opening document directly via secure Telegram gateway...");
                 window.open(rawUrl, '_blank');
                 return null;
@@ -1086,7 +1096,10 @@
         async function initLazyPages() {
             const viewport = document.getElementById('viewport-canvas-container');
             const pagesContainer = document.getElementById('pdf-pages-container');
-            const vWidth = viewport.clientWidth; baseLayoutContainerWidth = vWidth < 600 ? (vWidth - 20) : 800;
+            const vWidth = viewport.clientWidth; 
+            
+            // Dynamic width scaling to prevent horizontal clipping on desktop monitors
+            baseLayoutContainerWidth = vWidth < 850 ? (vWidth - 20) : 800; 
             
             const p1 = await globalCompoundDocumentLayoutMap[0].pdfDocInstance.getPage(1);
             const vp1 = p1.getViewport({ scale: 1.0 }); basePageRatio = vp1.height / vp1.width;
@@ -1140,11 +1153,22 @@
         function zoomIn() { executeViewportZoomModification(0.2); }
         function zoomOut() { executeViewportZoomModification(-0.2); }
 
+        // --- FIXED PROPORTIONAL SCROLL ZOOM ---
         function executeViewportZoomModification(amount) {
-            activeViewportScaleValue += amount; if(activeViewportScaleValue < 0.5) activeViewportScaleValue = 0.5; if(activeViewportScaleValue > 2.5) activeViewportScaleValue = 2.5;
-            document.getElementById('zoom-container').style.transform = `scale(${activeViewportScaleValue})`;
             const viewport = document.getElementById('viewport-canvas-container');
-            viewport.scrollBy(0,1); viewport.scrollBy(0,-1);
+            
+            // Calculate where we are currently viewing relative to the unscaled height
+            const centerY = viewport.scrollTop + (viewport.clientHeight / 2);
+            const ratioY = centerY / activeViewportScaleValue;
+
+            activeViewportScaleValue += amount; 
+            if(activeViewportScaleValue < 0.5) activeViewportScaleValue = 0.5; 
+            if(activeViewportScaleValue > 3.5) activeViewportScaleValue = 3.5;
+            
+            document.getElementById('zoom-container').style.transform = `scale(${activeViewportScaleValue})`;
+            
+            // Instantly map the scroll view back to the exact same relative spot 
+            viewport.scrollTop = (ratioY * activeViewportScaleValue) - (viewport.clientHeight / 2);
         }
 
         async function searchPDF() {
@@ -1264,6 +1288,5 @@
             });
         });
     </script>
-
 </body>
 </html>

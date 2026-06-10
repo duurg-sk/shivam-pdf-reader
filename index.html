@@ -406,8 +406,8 @@
         <button class="immersive-vision-switch" onclick="toggleImmersive()">👁️</button>
     </div>
 
-<script>
-        // --- SECURE FIRESTORE SYNC INITIALIZATION ---
+    <script>
+        // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",
             authDomain: "shivam-pdf-reader.firebaseapp.com",
@@ -491,8 +491,10 @@
 
             if(!bot || !chat) { alert("Please populate all necessary validation markers."); return; }
 
+            // Ensure parameters are committed to memory before syncing
             TELEGRAM_BOT_TOKEN = bot;
             TELEGRAM_CHAT_ID = chat;
+            
             sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN);
             sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
             try { localStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); localStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID); } catch(e){}
@@ -511,9 +513,16 @@
         function executeDirectAPIPassportBypass() {
             const bot = document.getElementById('direct-bot-token').value.trim();
             const chat = document.getElementById('direct-chat-id').value.trim();
+            
             if(!bot || !chat) { alert("Credentials missing."); return; }
-            TELEGRAM_BOT_TOKEN = bot; TELEGRAM_CHAT_ID = chat;
-            sessionStorage.setItem('MY_BOT_TOKEN', bot); sessionStorage.setItem('MY_CHAT_ID', chat);
+            
+            // Ensure parameters are committed to memory before syncing
+            TELEGRAM_BOT_TOKEN = bot; 
+            TELEGRAM_CHAT_ID = chat;
+            
+            sessionStorage.setItem('MY_BOT_TOKEN', TELEGRAM_BOT_TOKEN); 
+            sessionStorage.setItem('MY_CHAT_ID', TELEGRAM_CHAT_ID);
+            
             proceedToApplicationWorkspace();
         }
 
@@ -528,6 +537,10 @@
         }
 
         function proceedToApplicationWorkspace() {
+            if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+                alert("Critical Error: Missing Telegram routing parameters.");
+                return;
+            }
             document.getElementById('login-view').classList.remove('active-view');
             document.getElementById('core-app-view').classList.add('active-view');
             navigateToSPASection('home');
@@ -555,7 +568,9 @@
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider).then(async (result) => {
                 const active = await fetchCredentialsFromUserCloudProfile(result.user.uid);
-                if(active) { proceedToApplicationWorkspace(); } 
+                if(active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) { 
+                    proceedToApplicationWorkspace(); 
+                } 
                 else {
                     const token = prompt("Google account verified! Enter your existing Telegram Bot Token to link your files:");
                     const id = prompt("Enter your Telegram Chat ID:");
@@ -577,9 +592,13 @@
             
             showOverlayElement('system-loader');
             firebase.auth().signInWithEmailAndPassword(targetedEmailString, pass).then(async (res) => {
-                await fetchCredentialsFromUserCloudProfile(res.user.uid);
+                const active = await fetchCredentialsFromUserCloudProfile(res.user.uid);
                 hideOverlayElement('system-loader');
-                proceedToApplicationWorkspace();
+                if (active && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                    proceedToApplicationWorkspace();
+                } else {
+                    alert("Account found but no keys are linked to this profile.");
+                }
             }).catch(err => { hideOverlayElement('system-loader'); alert("Identity cross check mismatch: " + err.message); });
         }
 
@@ -1060,18 +1079,15 @@
             transmitMetadataPackageToCloud(); renderManagerFileSystemGrid();
         }
 
-        const viewport = document.getElementById('viewport-canvas-container');
-        const zoomContainer = document.getElementById('zoom-container');
-        const pagesContainer = document.getElementById('pdf-pages-container');
-
+        // --- THE STARTUP SAFEGUARD ENGINE ---
         window.addEventListener('load', () => { 
-            firebase.auth().onAuthStateChanged((user) => {
+            firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
-                    fetchCredentialsFromUserCloudProfile(user.uid).then((hasKeys) => {
-                        if (hasKeys || (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID)) {
-                            proceedToApplicationWorkspace();
-                        }
-                    });
+                    const hasKeys = await fetchCredentialsFromUserCloudProfile(user.uid);
+                    // Explicitly check that keys exist before forcing the view transition
+                    if (hasKeys && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                        proceedToApplicationWorkspace();
+                    }
                 }
             });
         });

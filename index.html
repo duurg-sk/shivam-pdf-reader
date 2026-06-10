@@ -407,6 +407,8 @@
     </div>
 
     <script>
+        // Explicitly define the PDF.js background worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         // --- SECURE FIRESTORE SYNC INITIALIZATION CAPTURED FROM CONSOLE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDoke_I83fZuTGTOfIwHyS6cdObsgTpybE",

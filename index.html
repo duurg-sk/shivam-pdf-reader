@@ -497,7 +497,7 @@
 
         // VIRTUAL SEQUENCE BINDING STATE
         let isSelectionMode = false;
-        let selectedFilesOrder = []; 
+        let selectedFilesOrder = []; // Array used to track the exact sequence of clicks
 
         const show = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; };
         const hide = (id) => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; };
@@ -888,6 +888,8 @@
                 const selIndex = selectedFilesOrder.indexOf(file.id);
                 const isSelected = selIndex > -1;
                 const selBorder = isSelected ? `border: 2px solid var(--primary); background: #f0f9ff;` : ``;
+                
+                // The blue sequence number badge that stamps 1, 2, 3...
                 const selCheck = isSelected ? `<div style="position:absolute; top:10px; right:10px; font-size:12px; font-weight:bold; background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:2; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${selIndex + 1}</div>` : '';
                 
                 const clickAction = isSelectionMode ? `toggleFileSelection('${file.id}', event)` : `initializePDFReaderViewport('${file.id}', '${file.name.replace(/'/g, "\\'")}')`;
@@ -946,24 +948,29 @@
             transmitMetadataPackageToCloud();
 
             try {
-                document.getElementById('core-app-view').style.display = 'none'; document.getElementById('reader-view').style.display = 'flex';
-                document.getElementById('reader-active-document-title').innerText = fileName; executeViewportZoomModification(0);
-
                 const targetNode = cloudOS.files.find(f => f.id === file_id);
                 if(targetNode && targetNode.isVirtualCompound) {
                     let seq = targetNode.compositionSequence; let offset = 0;
                     for(let i=0; i<seq.length; i++) {
                         document.getElementById('loader-message-text').innerText = `Binding segment channel matrix index ${i+1}/${seq.length}...`;
                         let buf = await fetchTargetBinaryBufferBytes(seq[i]);
+                        if (!buf) { hideOverlayElement('system-loader'); return; } // Firewall Bypass Triggered
                         let doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
                         globalCompoundDocumentLayoutMap.push({ fileId: seq[i], pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: offset });
                         offset += doc.numPages;
                     }
                 } else {
                     let buf = await fetchTargetBinaryBufferBytes(file_id);
+                    if (!buf) { hideOverlayElement('system-loader'); return; } // Firewall Bypass Triggered
                     let doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
                     globalCompoundDocumentLayoutMap.push({ fileId: file_id, pdfDocInstance: doc, pageCount: doc.numPages, offsetStart: 0 });
                 }
+
+                // Wait to display the viewer until after the blocks are securely downloaded
+                document.getElementById('core-app-view').style.display = 'none'; 
+                document.getElementById('reader-view').style.display = 'flex';
+                document.getElementById('reader-active-document-title').innerText = fileName; 
+                executeViewportZoomModification(0);
 
                 pageCount = globalCompoundDocumentLayoutMap.reduce((a,c) => a + c.pageCount, 0);
                 document.getElementById('page-count').innerText = pageCount;
@@ -977,7 +984,7 @@
             }
         }
 
-        // --- NEW MULTI-PROXY WATERFALL SYSTEM ---
+        // --- NEW MULTI-PROXY WATERFALL SYSTEM WITH FIREWALL BYPASS ---
         async function fetchTargetBinaryBufferBytes(fileId) {
             let diskData = await getBookFromVault(fileId); 
             if(diskData && diskData.byteLength > 100) return diskData; 
@@ -998,7 +1005,6 @@
             ];
             
             let arrayBuffer = null;
-            let lastError = "";
 
             for (let i = 0; i < proxyGateways.length; i++) {
                 try {
@@ -1010,12 +1016,14 @@
                     }
                 } catch (e) {
                     console.warn(`Gateway ${i+1} rejected connection, switching routes...`);
-                    lastError = e.message;
                 }
             }
 
             if (!arrayBuffer) {
-                throw new Error("All public network gateways refused the connection. Your local ISP is blocking proxy traffic.");
+                // FIREWALL BYPASS: Open directly in a new tab if all proxies are killed
+                alert("Network firewall blocked the proxies. Opening document directly via secure Telegram gateway...");
+                window.open(rawUrl, '_blank');
+                return null;
             }
             
             await saveBookToVault(fileId, arrayBuffer); 
